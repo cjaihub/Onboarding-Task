@@ -1,0 +1,14 @@
+.git
+.gitignore
+.dockerignore
+.env
+node_modules
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.dart_tool
+build
+.next
+.vscode
+.idea
