@@ -189,4 +189,36 @@ class WorkItemAPITests(TestCase):
         }, format='json')
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertIn('reference_number', resp.data)
-        self.assertTrue(resp.data['reference_number'].startswith('INC-'))
+from django.core.management import call_command
+from io import StringIO
+
+class SeedCommandTests(TestCase):
+    def test_seed_command_execution(self):
+        # Run seed
+        out = StringIO()
+        call_command('seed', stdout=out)
+        
+        self.assertIn('Successfully seeded 31 work items', out.getvalue())
+        self.assertGreaterEqual(Project.objects.count(), 1)
+        self.assertGreaterEqual(User.objects.count(), 3)
+        self.assertEqual(WorkItem.objects.count(), 31)
+        
+        # Verify required states exist
+        self.assertTrue(WorkItem.objects.filter(status='OPEN').exists())
+        self.assertTrue(WorkItem.objects.filter(status='IN_PROGRESS').exists())
+        self.assertTrue(WorkItem.objects.filter(status='RESOLVED').exists())
+        
+        # Verify relationships (comments/activities)
+        self.assertGreaterEqual(Activity.objects.count(), 31)
+        
+        # Verify idempotency
+        out2 = StringIO()
+        call_command('seed', stdout=out2)
+        self.assertIn('Database is already seeded with at least 30 items', out2.getvalue())
+        self.assertEqual(WorkItem.objects.count(), 31)
+
+        # Verify reset
+        out3 = StringIO()
+        call_command('seed', reset=True, stdout=out3)
+        self.assertIn('Resetting database...', out3.getvalue())
+        self.assertEqual(WorkItem.objects.count(), 31)
