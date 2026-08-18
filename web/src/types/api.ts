@@ -5,13 +5,28 @@ export interface User {
   id: number;
   username: string;
   email: string;
+  first_name?: string;
+  last_name?: string;
 }
 
 export interface Project {
   id: number;
   name: string;
   description: string;
+  project_type: string;
+  tech_tools: string[];
   created_at: string;
+  members?: number[];
+}
+
+export interface MetadataOption {
+  value: string;
+  label: string;
+}
+
+export interface AppMetadata {
+  project_types: MetadataOption[];
+  tech_tools: MetadataOption[];
 }
 
 export interface Comment {
@@ -20,16 +35,19 @@ export interface Comment {
   author: number;
   author_name: string;
   message: string;
+  attachment?: string | null;
   created_at: string;
 }
 
 export interface Activity {
   id: number;
   work_item: number;
+  actor?: number;
+  actor_name?: string;
   activity_type: string;
-  field_changed: string | null;
-  old_value: string | null;
-  new_value: string | null;
+  field_changed?: string;
+  old_value?: string;
+  new_value?: string;
   timestamp: string;
 }
 
@@ -50,6 +68,7 @@ export interface WorkItem {
   updated_at: string;
   comments: Comment[];
   activities: Activity[];
+  tags: string[];
 }
 
 export interface DashboardStats {
@@ -59,6 +78,11 @@ export interface DashboardStats {
   review: number;
   resolved: number;
   closed: number;
+  critical: number;
+  overdue: number;
+  by_priority: Record<string, number>;
+  by_status: Record<string, number>;
+  recent_activity: Activity[];
 }
 
 export interface PaginatedResponse<T> {
@@ -71,7 +95,7 @@ export interface PaginatedResponse<T> {
 export interface ApiError {
   message: string;
   status?: number;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }
 
 export interface WorkItemFilters {
@@ -79,7 +103,10 @@ export interface WorkItemFilters {
   priority?: Priority;
   project?: number;
   assigned_to?: number;
+  category?: string;
   search?: string;
   ordering?: string;
   page?: number;
+  page_size?: number;
+  tags?: string;
 }

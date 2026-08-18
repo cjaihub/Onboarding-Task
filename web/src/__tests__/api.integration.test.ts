@@ -1,7 +1,6 @@
-import { fetchWorkItems, fetchWorkItem, createWorkItem } from '../api/workItems';
+import { fetchWorkItems, fetchWorkItem } from '../api/workItems';
 import { fetchDashboardStats } from '../api/dashboard';
-import { fetchComments } from '../api/comments';
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 /**
  * INTEGRATION TESTS
@@ -32,7 +31,7 @@ describe('Web API Integration', () => {
   it('handles 404 cleanly', async () => {
     await expect(fetchWorkItem(999999)).rejects.toMatchObject({
       status: 404,
-      message: 'Not found.',
+      message: 'No WorkItem matches the given query.',
     });
   });
 

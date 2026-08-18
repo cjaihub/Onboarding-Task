@@ -34,12 +34,19 @@ export async function updateWorkItem(id: number, data: Partial<WorkItem>): Promi
 }
 
 export async function transitionWorkItem(id: number, status: Status, resolutionNote?: string): Promise<WorkItem> {
-  const body: any = { status };
+  const body: { status: Status; resolution_note?: string } = { status };
   if (resolutionNote) {
     body.resolution_note = resolutionNote;
   }
   return apiClient<WorkItem>(`/work-items/${id}/transition/`, {
     method: 'POST',
     body: JSON.stringify(body),
+  });
+}
+
+export async function assignWorkItem(id: number, userId: number): Promise<WorkItem> {
+  return apiClient<WorkItem>(`/work-items/${id}/assign/`, {
+    method: 'POST',
+    body: JSON.stringify({ assigned_to: userId }),
   });
 }

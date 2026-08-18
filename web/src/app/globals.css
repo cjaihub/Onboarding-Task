@@ -1,26 +1,196 @@
 @import "tailwindcss";
 
+/* ─── Design Tokens ─────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Surface layers */
+  --surface-base:    #f8f9fb;
+  --surface-card:    #ffffff;
+  --surface-raised:  #ffffff;
+  --surface-overlay: rgba(255,255,255,0.92);
+
+  /* Border */
+  --border-subtle:  #e5e7eb;
+  --border-default: #d1d5db;
+
+  /* Text */
+  --text-primary:   #0f1115;
+  --text-secondary: #4b5563;
+  --text-muted:     #9ca3af;
+
+  /* Brand */
+  --brand:          #dc2626;
+  --brand-hover:    #b91c1c;
+  --brand-muted:    rgba(220,38,38,0.08);
+
+  /* Sidebar */
+  --sidebar-bg:     #ffffff;
+  --sidebar-border: #e5e7eb;
+
+  /* Shadow */
+  --shadow-card: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
 }
 
+.dark {
+  /* Surface layers */
+  --surface-base:    #080a0f;
+  --surface-card:    #0f1115;
+  --surface-raised:  #161b24;
+  --surface-overlay: rgba(15,17,21,0.96);
+
+  /* Border */
+  --border-subtle:  rgba(255,255,255,0.06);
+  --border-default: rgba(255,255,255,0.10);
+
+  /* Text */
+  --text-primary:   #f0f2f7;
+  --text-secondary: #9ca3af;
+  --text-muted:     #4b5563;
+
+  /* Brand stays the same */
+  --brand:          #ef4444;
+  --brand-hover:    #dc2626;
+  --brand-muted:    rgba(239,68,68,0.12);
+
+  /* Sidebar */
+  --sidebar-bg:     #0f1115;
+  --sidebar-border: rgba(255,255,255,0.06);
+
+  /* Shadow */
+  --shadow-card: 0 1px 4px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
+}
+
+/* ─── Tailwind Theme Registration ────────────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--surface-base);
+  --color-foreground: var(--text-primary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ─── Dark variant strategy ─────────────────────────────────────── */
+@custom-variant dark (&:is(.dark *));
+
+/* ─── Base ───────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Theme-aware utility classes ────────────────────────────────── */
+.surface-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card);
+}
+
+.surface-raised {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+}
+
+.text-primary   { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted     { color: var(--text-muted); }
+
+/* ─── Scrollbars ─────────────────────────────────────────────────── */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 2px;
+}
+
+/* ─── Smooth page transitions ────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter {
+  animation: fadeIn 0.22s ease forwards;
+}
+
+/* ─── Theme toggle pill animation ────────────────────────────────── */
+.theme-pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: 9999px;
+  padding: 3px;
+  gap: 2px;
+  transition: border-color 0.2s ease;
+}
+.theme-pill button {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: color 0.15s ease;
+}
+.theme-pill button.active {
+  color: var(--text-primary);
+}
+.theme-pill-slider {
+  position: absolute;
+  top: 3px;
+  height: 28px;
+  width: 28px;
+  border-radius: 9999px;
+  background: var(--surface-card);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15), 0 0 0 1px var(--border-default);
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ─── Table rows ─────────────────────────────────────────────────── */
+.dark table thead { background: #0f1115 !important; }
+.dark table tbody  { background: #0f1115 !important; }
+.dark table tbody tr { border-color: rgba(255,255,255,0.06) !important; }
+.dark table tbody tr:hover { background: rgba(239,68,68,0.06) !important; }
+
+/* ─── Input & Select in dark mode ────────────────────────────────── */
+.dark input, .dark textarea, .dark select {
+  background: var(--surface-raised) !important;
+  border-color: var(--border-default) !important;
+  color: var(--text-primary) !important;
+}
+.dark input::placeholder, .dark textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* ─── Focus rings ────────────────────────────────────────────────── */
+.dark input:focus, .dark textarea:focus, .dark select:focus {
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 0 3px var(--brand-muted) !important;
+  outline: none !important;
+}
+
+.hide-scrollbar::-webkit-scrollbar { 
+  display: none; 
+} 
+.hide-scrollbar { 
+  -ms-overflow-style: none; 
+  scrollbar-width: none; 
 }
