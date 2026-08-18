@@ -3,7 +3,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
-from core.models import Project, WorkItem, Comment, Activity
+from core.models import Project, WorkItem, Comment, Activity, Workflow
 from core.services import transition_work_item, record_activity
 
 class Command(BaseCommand):
@@ -15,6 +15,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if options['reset']:
             self.stdout.write(self.style.WARNING("Resetting database..."))
+            Workflow.objects.all().delete()
             Comment.objects.all().delete()
             Activity.objects.all().delete()
             WorkItem.objects.all().delete()
@@ -22,8 +23,8 @@ class Command(BaseCommand):
             User.objects.exclude(is_superuser=True).delete()
 
         # If data already seeded, exit unless reset
-        if WorkItem.objects.count() >= 30:
-            self.stdout.write(self.style.SUCCESS('Database is already seeded with at least 30 items. Use --reset to re-seed.'))
+        if User.objects.count() >= 3 and not options['reset']:
+            self.stdout.write(self.style.SUCCESS('Database is already seeded with users. Use --reset to re-seed.'))
             return
 
         # Users
@@ -32,74 +33,79 @@ class Command(BaseCommand):
         u3, _ = User.objects.get_or_create(username='charlie', defaults={'email': 'charlie@example.com'})
         users = [u1, u2, u3]
 
-        # Projects
-        p1, _ = Project.objects.get_or_create(name='Internal Tools', defaults={'description': 'Core tooling'})
-        p2, _ = Project.objects.get_or_create(name='Customer Portal', defaults={'description': 'External facing'})
+        # Projects (System required since no UI exists)
+        p1, _ = Project.objects.get_or_create(name='CJ Engineering Platform', defaults={'description': 'Core internal infrastructure'})
+        p2, _ = Project.objects.get_or_create(name='Global Afr Media Platform', defaults={'description': 'Media distribution'})
+        p3, _ = Project.objects.get_or_create(name='IGSU Digital Platform', defaults={'description': 'Digital services platform'})
+        p4, _ = Project.objects.get_or_create(name='Omni Automation Platform', defaults={'description': 'Automation workflows'})
 
-        now = timezone.now()
-
-        categories = ['Bug', 'Feature', 'Maintenance', 'Documentation']
-        priorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
-
-        items_data = []
-
-        # 1. Overdue active item (OPEN, overdue)
-        items_data.append({'title': 'Fix critical login bug', 'status': 'OPEN', 'due': now - timedelta(days=2), 'priority': 'CRITICAL', 'assignee': u1})
-        # 2. Overdue resolved item (RESOLVED, overdue)
-        items_data.append({'title': 'Update payment gateway API', 'status': 'RESOLVED', 'due': now - timedelta(days=5), 'priority': 'HIGH', 'assignee': u2})
-        # 3. Future due date (IN_PROGRESS)
-        items_data.append({'title': 'Migrate database to v2', 'status': 'IN_PROGRESS', 'due': now + timedelta(days=10), 'priority': 'MEDIUM', 'assignee': u3})
+        # Workflows
+        w1, _ = Workflow.objects.get_or_create(
+            name='Auto-Assign to DevOps',
+            defaults={
+                'description': 'Automatically assigns new infrastructure tickets to Alice.',
+                'is_active': True,
+                'definition': {
+                    "nodes": [
+                        {
+                            "id": "trigger-1",
+                            "type": "trigger",
+                            "position": {"x": 100, "y": 100},
+                            "data": {"type_id": "trigger_work_item_created", "label": "On Item Created"}
+                        },
+                        {
+                            "id": "logic-1",
+                            "type": "logic",
+                            "position": {"x": 400, "y": 100},
+                            "data": {"type_id": "logic_condition", "field": "category", "operator": "equals", "value": "INFRASTRUCTURE", "label": "Is Infrastructure?"}
+                        },
+                        {
+                            "id": "action-1",
+                            "type": "action",
+                            "position": {"x": 700, "y": 100},
+                            "data": {"type_id": "action_assign", "assignee_id": u1.id, "label": "Assign to Alice"}
+                        }
+                    ],
+                    "edges": [
+                        {"id": "e1-2", "source": "trigger-1", "target": "logic-1"},
+                        {"id": "e2-3", "source": "logic-1", "sourceHandle": "true", "target": "action-1"}
+                    ]
+                }
+            }
+        )
         
-        # 4-30 Random but realistic
-        for i in range(4, 32):
-            items_data.append({
-                'title': f'Task {i} for development',
-                'status': random.choice(['OPEN', 'IN_PROGRESS', 'REVIEW', 'RESOLVED', 'CLOSED']),
-                'due': now + timedelta(days=random.randint(-10, 20)) if random.random() > 0.3 else None,
-                'priority': random.choice(priorities),
-                'assignee': random.choice(users) if random.random() > 0.2 else None
-            })
+        w2, _ = Workflow.objects.get_or_create(
+            name='High Priority Alert',
+            defaults={
+                'description': 'Adds a comment when high priority item is created.',
+                'is_active': True,
+                'definition': {
+                    "nodes": [
+                        {
+                            "id": "trigger-1",
+                            "type": "trigger",
+                            "position": {"x": 100, "y": 100},
+                            "data": {"type_id": "trigger_work_item_created", "label": "On Item Created"}
+                        },
+                        {
+                            "id": "logic-1",
+                            "type": "logic",
+                            "position": {"x": 400, "y": 100},
+                            "data": {"type_id": "logic_condition", "field": "priority", "operator": "equals", "value": "HIGH", "label": "Is High Priority?"}
+                        },
+                        {
+                            "id": "action-1",
+                            "type": "action",
+                            "position": {"x": 700, "y": 100},
+                            "data": {"type_id": "action_add_comment", "message": "Automated Alert: Please review this High Priority item immediately.", "label": "Add Alert Comment"}
+                        }
+                    ],
+                    "edges": [
+                        {"id": "e1-2", "source": "trigger-1", "target": "logic-1"},
+                        {"id": "e2-3", "source": "logic-1", "sourceHandle": "true", "target": "action-1"}
+                    ]
+                }
+            }
+        )
 
-        for data in items_data:
-            project = random.choice([p1, p2])
-            reporter = random.choice(users)
-            
-            # Initial state must be OPEN
-            item = WorkItem.objects.create(
-                title=data['title'],
-                description=f"Description for {data['title']}",
-                project=project,
-                category=random.choice(categories),
-                priority=data['priority'],
-                assigned_to=data['assignee'],
-                reported_by=reporter,
-                due_date=data['due'].date() if data['due'] else None,
-            )
-            record_activity(item, 'CREATED')
-
-            # Move through states according to the Strict DAG
-            target_status = data['status']
-            
-            if target_status != 'OPEN':
-                transition_work_item(item, 'IN_PROGRESS', user=reporter)
-                
-            if target_status in ['REVIEW', 'RESOLVED', 'CLOSED']:
-                transition_work_item(item, 'REVIEW', user=reporter)
-                
-            if target_status in ['RESOLVED', 'CLOSED']:
-                # Ensure assignee and note exist before resolving!
-                if not item.assigned_to:
-                    item.assigned_to = random.choice(users)
-                    item.save(update_fields=['assigned_to'])
-                item.resolution_note = "Resolved the issue as per requirements."
-                item.save(update_fields=['resolution_note'])
-                transition_work_item(item, 'RESOLVED', user=item.assigned_to)
-
-            if target_status == 'CLOSED':
-                transition_work_item(item, 'CLOSED', user=reporter)
-                
-            # Add some comments
-            if random.random() > 0.5:
-                Comment.objects.create(work_item=item, author=random.choice(users), message="This is a test comment.")
-
-        self.stdout.write(self.style.SUCCESS(f'Successfully seeded {len(items_data)} work items.'))
+        self.stdout.write(self.style.SUCCESS('Successfully seeded users, projects, and workflows.'))

@@ -1,39 +1,209 @@
 from rest_framework import viewsets, filters, status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+import django_filters
+from django.db import models
 
-from .models import Project, WorkItem, Comment, Activity
-from .serializers import ProjectSerializer, WorkItemSerializer, CommentSerializer, ActivitySerializer
+from django.contrib.auth.models import User
+from .models import Project, WorkItem, Comment, Activity, Workflow, WorkflowExecution, WorkflowExecutionStep
+from .serializers import (
+    ProjectSerializer, WorkItemSerializer, CommentSerializer, 
+    ActivitySerializer, UserSerializer, WorkflowSerializer,
+    WorkflowExecutionSerializer, WorkflowExecutionStepSerializer
+)
 
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
 
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+class WorkItemFilter(django_filters.FilterSet):
+    tags = django_filters.CharFilter(method='filter_tags')
+
+    class Meta:
+        model = WorkItem
+        fields = ['status', 'priority', 'project', 'assigned_to', 'category']
+
+    def filter_tags(self, queryset, name, value):
+        if value:
+            tags_list = [t.strip() for t in value.split(',')]
+            for tag in tags_list:
+                queryset = queryset.filter(tags__icontains=tag)
+        return queryset
+
 class WorkItemViewSet(viewsets.ModelViewSet):
     queryset = WorkItem.objects.all().order_by('-created_at')
     serializer_class = WorkItemSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['status', 'priority', 'project', 'assigned_to']
+    filterset_class = WorkItemFilter
     search_fields = ['reference_number', 'title', 'description']
-    ordering_fields = ['created_at', 'due_date']
+    ordering_fields = ['created_at', 'due_date', 'updated_at', 'priority']
+
+    def perform_create(self, serializer):
+        work_item = serializer.save()
+        if work_item.assigned_to:
+            from collaboration.models import Notification
+            Notification.objects.create(
+                actor=self.request.user if self.request.user.is_authenticated else None,
+                recipient=work_item.assigned_to,
+                project=work_item.project,
+                work_item=work_item,
+                message=f"You have been assigned a new task: {work_item.title}"
+            )
+
+    def perform_update(self, serializer):
+        old_assigned_to = self.get_object().assigned_to
+        work_item = serializer.save()
+        if work_item.assigned_to and work_item.assigned_to != old_assigned_to:
+            from collaboration.models import Notification
+            Notification.objects.create(
+                actor=self.request.user if self.request.user.is_authenticated else None,
+                recipient=work_item.assigned_to,
+                project=work_item.project,
+                work_item=work_item,
+                message=f"You have been assigned to task: {work_item.title}"
+            )
+
+    @action(detail=True, methods=['post'])
+    def transition(self, request, pk=None):
+        work_item = self.get_object()
+        new_status = request.data.get('status')
+        
+        if not new_status:
+            return Response({'status': 'Status is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            from .services import transition_work_item
+            transition_work_item(work_item, new_status, request.user)
+            
+            serializer = self.get_serializer(work_item)
+            return Response(serializer.data)
+        except ValueError as e:
+            return Response({'status': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def assign(self, request, pk=None):
+        work_item = self.get_object()
+        user_id = request.data.get('assigned_to')
+        
+        if not user_id:
+            return Response({'error': 'assigned_to is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            user = User.objects.get(id=user_id)
+            old_assigned_to = work_item.assigned_to
+            work_item.assigned_to = user
+            work_item.save(update_fields=['assigned_to', 'updated_at'])
+            
+            from .services import record_activity
+            record_activity(
+                work_item=work_item,
+                activity_type='UPDATED',
+                field_changed='assigned_to',
+                old_value=str(old_assigned_to) if old_assigned_to else None,
+                new_value=str(user),
+                user=request.user if request.user.is_authenticated else None
+            )
+            
+            serializer = self.get_serializer(work_item)
+            return Response(serializer.data)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get', 'post'])
+    def comments(self, request, pk=None):
+        work_item = self.get_object()
+        
+        if request.method == 'GET':
+            comments = Comment.objects.filter(work_item=work_item).order_by('created_at')
+            page = self.paginate_queryset(comments)
+            if page is not None:
+                serializer = CommentSerializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+            serializer = CommentSerializer(comments, many=True)
+            return Response(serializer.data)
+            
+        elif request.method == 'POST':
+            data = request.data.copy()
+            data['work_item'] = work_item.id
+            serializer = CommentSerializer(data=data, context={'request': request})
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'])
+    def activity(self, request, pk=None):
+        work_item = self.get_object()
+        activities = Activity.objects.filter(work_item=work_item).order_by('-timestamp')
+        page = self.paginate_queryset(activities)
+        if page is not None:
+            serializer = ActivitySerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = ActivitySerializer(activities, many=True)
+        return Response(serializer.data)
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
 
 class ActivityViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Activity.objects.all()
     serializer_class = ActivitySerializer
 
 @api_view(['GET'])
+def metadata(request):
+    from .models import Project
+    project_types = [{'value': k, 'label': v} for k, v in Project.PROJECT_TYPES]
+    tech_tools = [
+        {'value': 'JAVA', 'label': 'Java'},
+        {'value': 'PYTHON', 'label': 'Python'},
+        {'value': 'JS', 'label': 'JavaScript'},
+        {'value': 'TS', 'label': 'TypeScript'},
+        {'value': 'REACT', 'label': 'React'},
+        {'value': 'NEXTJS', 'label': 'Next.js'},
+        {'value': 'FLUTTER', 'label': 'Flutter'},
+        {'value': 'SQL', 'label': 'SQL Database'},
+        {'value': 'NOSQL', 'label': 'NoSQL Database'},
+        {'value': 'AWS', 'label': 'AWS'},
+        {'value': 'GCP', 'label': 'Google Cloud'},
+    ]
+    return Response({
+        'project_types': project_types,
+        'tech_tools': tech_tools
+    })
+
+@api_view(['GET'])
 def dashboard_stats(request):
     total = WorkItem.objects.count()
-    open_count = WorkItem.objects.filter(status='OPEN').count()
-    in_progress_count = WorkItem.objects.filter(status='IN_PROGRESS').count()
-    review_count = WorkItem.objects.filter(status='REVIEW').count()
-    resolved_count = WorkItem.objects.filter(status='RESOLVED').count()
-    closed_count = WorkItem.objects.filter(status='CLOSED').count()
+    
+    status_counts = WorkItem.objects.values('status').annotate(count=models.Count('status'))
+    by_status = {item['status']: item['count'] for item in status_counts}
+    
+    open_count = by_status.get('OPEN', 0)
+    in_progress_count = by_status.get('IN_PROGRESS', 0)
+    review_count = by_status.get('REVIEW', 0)
+    resolved_count = by_status.get('RESOLVED', 0)
+    closed_count = by_status.get('CLOSED', 0)
+
+    priority_counts = WorkItem.objects.values('priority').annotate(count=models.Count('priority'))
+    by_priority = {item['priority']: item['count'] for item in priority_counts}
+    
+    critical_count = by_priority.get('CRITICAL', 0)
+
+    import datetime
+    today = datetime.date.today()
+    overdue_count = WorkItem.objects.filter(due_date__lt=today).exclude(status__in=['RESOLVED', 'CLOSED']).count()
+
+    recent_activities = Activity.objects.all().select_related('work_item', 'actor').order_by('-timestamp')[:5]
+    activity_serializer = ActivitySerializer(recent_activities, many=True)
     
     return Response({
         'total': total,
@@ -41,5 +211,75 @@ def dashboard_stats(request):
         'in_progress': in_progress_count,
         'review': review_count,
         'resolved': resolved_count,
-        'closed': closed_count
+        'closed': closed_count,
+        'critical': critical_count,
+        'overdue': overdue_count,
+        'by_priority': by_priority,
+        'by_status': by_status,
+        'recent_activity': activity_serializer.data,
     })
+
+class WorkflowViewSet(viewsets.ModelViewSet):
+    queryset = Workflow.objects.all().order_by('-created_at')
+    serializer_class = WorkflowSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    search_fields = ['name', 'description']
+
+    @action(detail=True, methods=['post'])
+    def activate(self, request, pk=None):
+        workflow = self.get_object()
+        workflow.is_active = True
+        workflow.save()
+        return Response({'status': 'Workflow activated'})
+
+    @action(detail=True, methods=['post'])
+    def deactivate(self, request, pk=None):
+        workflow = self.get_object()
+        workflow.is_active = False
+        workflow.save()
+        return Response({'status': 'Workflow deactivated'})
+        
+    @action(detail=True, methods=['post'])
+    def execute(self, request, pk=None):
+        from .workflow_engine import execute_workflow_run
+        workflow = self.get_object()
+        
+        # We need a trigger node to start from. Let's find the first manual trigger or any trigger.
+        nodes = workflow.definition.get("nodes", [])
+        edges = workflow.definition.get("edges", [])
+        
+        trigger_nodes = [n for n in nodes if n.get("type") == "trigger"]
+        if not trigger_nodes:
+            return Response({'error': 'No trigger node found in workflow'}, status=400)
+            
+        # Prioritize manual trigger, else just use the first one
+        start_node = next((n for n in trigger_nodes if n.get("data", {}).get("type_id") == "trigger_manual"), trigger_nodes[0])
+        
+        execution = WorkflowExecution.objects.create(
+            workflow=workflow,
+            status="RUNNING",
+            trigger_data={"manual": True}
+        )
+        
+        # Start execution in a fire-and-forget manner (for MVP, we just run it synchronously here since it's local)
+        # In production this should be a Celery task
+        try:
+            execute_workflow_run(execution, start_node["id"], nodes, edges)
+        except Exception as e:
+            execution.status = "FAILED"
+            execution.save()
+            return Response({'error': str(e)}, status=500)
+            
+        return Response({'status': 'Workflow executed', 'execution_id': execution.id})
+
+class WorkflowExecutionViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = WorkflowExecution.objects.all().order_by('-started_at')
+    serializer_class = WorkflowExecutionSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['workflow', 'status']
+
+class WorkflowExecutionStepViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = WorkflowExecutionStep.objects.all().order_by('started_at')
+    serializer_class = WorkflowExecutionStepSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['execution', 'status']

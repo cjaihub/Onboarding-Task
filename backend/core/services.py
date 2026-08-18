@@ -8,7 +8,7 @@ VALID_TRANSITIONS = {
     'CLOSED': ['OPEN']
 }
 
-def record_activity(work_item, activity_type, field_changed=None, old_value=None, new_value=None):
+def record_activity(work_item, activity_type, field_changed=None, old_value=None, new_value=None, user=None):
     """
     Create an Activity record for a work item event.
     Called by views on create, update, and comment addition.
@@ -16,6 +16,7 @@ def record_activity(work_item, activity_type, field_changed=None, old_value=None
     """
     return Activity.objects.create(
         work_item=work_item,
+        actor=user,
         activity_type=activity_type,
         field_changed=field_changed,
         old_value=old_value,

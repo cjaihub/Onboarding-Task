@@ -2,9 +2,22 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class Project(models.Model):
+    PROJECT_TYPES = [
+        ('BACKEND', 'Backend'),
+        ('FRONTEND', 'Frontend'),
+        ('FULLSTACK', 'Full Stack'),
+        ('MOBILE', 'Mobile'),
+        ('API', 'API / Integration'),
+        ('UIUX', 'UI/UX Design'),
+        ('INFRA', 'Infrastructure / DevOps'),
+    ]
+
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
+    project_type = models.CharField(max_length=50, choices=PROJECT_TYPES, default='FULLSTACK')
+    tech_tools = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    members = models.ManyToManyField(User, related_name='projects', blank=True)
 
     def __str__(self):
         return self.name
@@ -29,6 +42,7 @@ class WorkItem(models.Model):
     reported_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='reported_work_items')
     due_date = models.DateField(null=True, blank=True)
     resolution_note = models.TextField(blank=True)
+    tags = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -48,6 +62,7 @@ class Comment(models.Model):
     work_item = models.ForeignKey(WorkItem, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
     message = models.TextField()
+    attachment = models.FileField(upload_to='attachments/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -55,6 +70,7 @@ class Comment(models.Model):
 
 class Activity(models.Model):
     work_item = models.ForeignKey(WorkItem, on_delete=models.CASCADE, related_name='activities')
+    actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='activities_caused')
     activity_type = models.CharField(max_length=100)
     field_changed = models.CharField(max_length=100, null=True, blank=True)
     old_value = models.TextField(null=True, blank=True)
@@ -63,3 +79,51 @@ class Activity(models.Model):
 
     def __str__(self):
         return f"Activity: {self.activity_type} on {self.work_item}"
+
+
+class Workflow(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True, related_name='workflows')
+    is_active = models.BooleanField(default=False)
+    definition = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+class WorkflowExecution(models.Model):
+    STATUS_CHOICES = [
+        ('QUEUED', 'Queued'),
+        ('RUNNING', 'Running'),
+        ('SUCCESS', 'Success'),
+        ('FAILED', 'Failed'),
+        ('CANCELLED', 'Cancelled'),
+    ]
+    workflow = models.ForeignKey(Workflow, on_delete=models.CASCADE, related_name='executions')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='QUEUED')
+    trigger_data = models.JSONField(default=dict, blank=True)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.workflow.name} - {self.status}"
+
+class WorkflowExecutionStep(models.Model):
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('RUNNING', 'Running'),
+        ('SUCCESS', 'Success'),
+        ('FAILED', 'Failed'),
+    ]
+    execution = models.ForeignKey(WorkflowExecution, on_delete=models.CASCADE, related_name='steps')
+    node_id = models.CharField(max_length=100)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    logs = models.TextField(blank=True)
+    error = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"Node {self.node_id} ({self.status})"
