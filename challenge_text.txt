@@ -1,0 +1,460 @@
+NEW DEVELOPER
+ONBOARDING CHALLENGE
+Internal Incident & Work Tracker
+Two-Day Practical Build
+Primary Stack
+Next.js + TypeScript, Django REST Framework, Docker, Flutter
+Database
+Django default SQLite database
+Duration
+2 working days
+Challenge Format
+End-to-end product build with workflow logic and complex views
+What I’ll Look At
+Engineering judgement, learning speed, UI/UX, API design, debugging and code quality
+Purpose: This challenge is a practical way for you to get familiar with our stack while also giving me a clear view of how you approach real development work. You’ll be working from strengths you already have in TypeScript, Python and UI/UX while getting hands-on with DRF, Docker and Flutter.
+A practical introduction to our Next.js, DRF, Docker and Flutter stack
+1. Welcome & Challenge Overview
+You’ll be building a small Internal Incident & Work Tracker for a development team that manages bugs, incidents, feature requests and operational tasks across several software projects. The solution should work from a Next.js web dashboard and a Flutter mobile client, both connected to the same DRF API.
+What makes this challenge interesting: it goes beyond basic CRUD. You’ll work with workflow rules, derived data, activity history, aggregation, filtering, a visual work board and a detailed operational view.
+The goal is not perfection or completing every possible extra feature. I’m mainly interested in how you approach the problem, structure your solution, handle real application states, and get comfortable with the stack we use. Focus on a coherent, working core first, then improve or extend it if time allows.
+1.1 What I’ll be looking for
+How you turn a set of requirements into a clear, maintainable solution.
+Your Python fundamentals and how quickly you can apply Django REST Framework conventions.
+Your TypeScript and Next.js skills, especially around complex UI state and API integration.
+Your UI/UX judgement when you are given room to make your own design decisions.
+Your understanding of Docker and your ability to make the backend easy to run.
+How quickly you can pick up Flutter well enough to consume an API and complete a small mobile workflow.
+Your debugging approach, error handling, Git habits and ability to explain your technical decisions.
+1.2 Resources you can use
+You’re welcome to use documentation, search, Stack Overflow and AI-assisted coding tools. Use the tools you would normally use while working. The only requirement is that you understand the code you submit and can explain the important decisions you made.
+2. Tech Stack
+Layer
+Required technology
+Notes
+Backend
+Python + Django + Django REST Framework
+REST API and business rules
+Database
+SQLite
+Use Django's default SQLite database; no PostgreSQL setup is required
+Backend runtime
+Docker / Docker Compose
+Backend must be runnable in a container
+Web
+Next.js + TypeScript
+Primary UI; this is where I’ll look most closely at your frontend and UI/UX approach
+Mobile
+Flutter
+Smaller scope; focuses on learning speed and API integration
+You may choose the supporting libraries you’re comfortable with. Examples include Tailwind, Material UI, shadcn/ui, TanStack Query, Axios, django-filter, Dio, Riverpod, Provider or Bloc. There is no single “correct” choice; I’m more interested in whether your choices are sensible for the problem and whether you can explain them.
+3. Target Architecture
+Next.js (TypeScript)  ───────┐
+                              │ REST API
+Flutter mobile app  ──────────┤
+                              ▼
+                     Django REST Framework
+                              │
+                         Dockerized
+                              │
+                              ▼
+                         SQLite DB
+SQLite guidance: Use the standard Django SQLite database. You should ensure data is not unexpectedly lost when the backend container is rebuilt (for example through an appropriate bind mount/volume or clearly documented development persistence approach).
+4. Functional Domain & Suggested Data Model
+4.1 Project
+A project represents one of the software systems being supported. At minimum, include a name, description and created_at timestamp.
+4.2 Work Item / Incident
+Field
+Purpose / expected behavior
+reference_number
+Backend-generated identifier such as INC-00001
+title
+Short issue/work-item title
+description
+Detailed problem or request description
+project
+Related project
+category
+BUG, FEATURE, SUPPORT, INFRASTRUCTURE or OTHER
+priority
+LOW, MEDIUM, HIGH or CRITICAL
+status
+OPEN, IN_PROGRESS, REVIEW, RESOLVED or CLOSED
+assigned_to
+Developer responsible for the item
+reported_by
+Person who reported the item
+due_date
+Optional target date
+resolution_note
+Required before resolution
+created_at / updated_at
+Audit timestamps
+4.3 Comments
+A work item can have multiple comments. Each comment should identify the work item, author, message and creation time.
+4.4 Activity History
+Important changes should appear in an activity stream on the work-item detail screen. At minimum, capture creation, assignment changes, priority changes, status changes and comments.
+5. Workflow & Business Rules
+Each new work item should receive a backend-generated reference number such as INC-00001. Please do not generate this in the frontend.
+A work item should only move to RESOLVED when it has an assignee and a non-empty resolution note.
+A work item should not move directly from OPEN to CLOSED. CLOSED should only be allowed after RESOLVED.
+The application should identify overdue work items using due_date and status. You do not need a dedicated database field for overdue unless you have a good reason for adding one.
+Important changes should create activity entries automatically.
+Invalid workflow transitions should be rejected by the backend, even if the frontend attempts them.
+Engineering judgement: You may define additional sensible transition rules or validations, but must document any assumptions.
+6. Backend (Django REST Framework)
+6.1 Core endpoints
+GET    /api/projects/
+GET    /api/work-items/
+POST   /api/work-items/
+GET    /api/work-items/{id}/
+PATCH  /api/work-items/{id}/
+DELETE /api/work-items/{id}/
+6.2 Workflow-oriented endpoints
+Please go beyond generic CRUD for important business actions. At least the following workflow actions should have explicit API behavior (exact route naming is up to you):
+POST /api/work-items/{id}/transition/
+POST /api/work-items/{id}/assign/
+GET  /api/work-items/{id}/activity/
+GET  /api/work-items/{id}/comments/
+POST /api/work-items/{id}/comments/
+6.3 Search, filtering and ordering
+Filter by status.
+Filter by priority.
+Filter by project.
+Filter by assignee.
+Search across at least reference number, title and description.
+Support ordering by at least created_at and due_date.
+Combined filters should work together.
+/api/work-items/?project=2&status=OPEN&priority=HIGH&search=payment&ordering=-created_at
+6.4 Dashboard aggregation endpoint
+Provide a dashboard endpoint that returns the aggregated information needed by the web dashboard. The frontend should not need to download every work item just to calculate management totals.
+GET /api/dashboard/
+Example response shape:
+{
+  "total": 48,
+  "open": 14,
+  "in_progress": 9,
+  "review": 6,
+  "resolved": 15,
+  "closed": 4,
+  "overdue": 5,
+  "critical": 3,
+  "by_priority": {...},
+  "by_status": {...},
+  "recent_activity": [...]
+}
+6.5 Seed data
+Provide repeatable test data using a management command, fixture or similar approach. A useful target is 4 projects, 5 users/developers, 25-40 work items, 20+ comments and enough activity history to make the dashboard and timeline feel realistic.
+7. Next.js Web Application
+Next.js is the main frontend part of this challenge. I’d like to see thoughtful component structure, API integration, useful application states, responsive behavior and the UI/UX strength you mentioned.
+7.1 Complex View A - Operational Dashboard
+Build a dashboard that gives me an immediate picture of workload and risk. It should be more useful than a simple row of counters.
+Summary cards: Total, Open, In Progress, Critical, Overdue and Resolved.
+A visual status breakdown (chart, bars, segmented indicator or equivalent).
+A priority distribution or risk view.
+A Critical / Overdue attention queue that links to the related work item.
+Recent activity feed showing meaningful changes across the system.
+Responsive behavior suitable for desktop and smaller screens.
+UX note: There is no Figma design for this challenge. Use your own judgement for information hierarchy, spacing, visual states and interaction design.
+7.2 Complex View B - Workflow / Kanban Board
+Build a board grouped by workflow status (OPEN, IN_PROGRESS, REVIEW and RESOLVED). Each card should show enough information for someone to understand the item without opening it immediately.
+Cards display at least reference number, title, project, priority and assignee.
+Allow users to move work items between workflow states. Drag-and-drop is preferred, but a well-designed alternative is acceptable.
+A move should call the DRF transition endpoint rather than only changing local frontend state.
+Show clear progress while a transition is being processed.
+If the API rejects a transition, show a useful error and keep/return the card to the correct state.
+After a successful change, keep the board data in sync with the backend.
+OPEN            IN PROGRESS         REVIEW             RESOLVED
+┌────────────┐   ┌────────────┐     ┌────────────┐     ┌────────────┐
+│ INC-0012   │   │ INC-0011   │     │ INC-0008   │     │ INC-0003   │
+│ Login bug  │   │ M-Pesa bug │     │ Dashboard  │     │ SMS issue  │
+│ HIGH       │   │ CRITICAL   │     │ MEDIUM     │     │ LOW        │
+└────────────┘   └────────────┘     └────────────┘     └────────────┘
+7.3 Complex View C - Work Item Detail / Command Center
+Make the detail page feel like a useful working screen, not simply a form that displays database fields.
+Main issue summary: reference, title, description, project and priority.
+Side metadata area: status, assignee, due date, category and overdue indicator.
+Status transition action with validation/error feedback.
+Assignment control.
+Resolution note handling.
+Comment thread with add-comment action.
+Chronological activity timeline showing important changes.
+Clear loading, error and empty states for sub-sections where appropriate.
+7.4 Work Items List / Investigation View
+Search input.
+Project, status and priority filters.
+Sorting.
+Pagination.
+Useful columns such as reference, title, project, priority, status, assignee, due date and updated time.
+Where practical, keep filters in URL query parameters so the current view can be shared or revisited.
+7.5 Create Work Item
+Provide a clean creation flow with useful validation feedback. The form is not the main focus, but it should still feel complete and show good form-state and UX fundamentals.
+7.6 Loading, Empty, Error & Validation States
+State
+Expectation
+Loading
+Use appropriate indicators or skeletons; do not show an unexplained blank page.
+Empty
+Explain why there is no data and, where useful, give the user a next action.
+Error
+Show a meaningful failure message and provide retry/recovery where appropriate.
+Mutation in progress
+Prevent confusing double actions and show that work is being processed.
+Validation failure
+Display backend and frontend validation in a user-understandable way.
+8. Flutter Mobile Scope
+The Flutter portion is intentionally smaller because you described your Flutter experience as entry-level. I’m not expecting a large mobile app; I’m looking at how quickly you can learn, organize the code and integrate with the same DRF API.
+Screen
+Minimum behavior
+My Work / Work Items
+List work items, basic status filter, pull-to-refresh, loading and error handling.
+Work Item Details
+Show core details, status, priority, project, assignee and comments.
+Actions
+Update status through the transition API and add a comment.
+Please avoid placing the entire application in main.dart. Use a sensible separation such as models, services/repositories, screens/pages and reusable widgets. You may choose whichever state-management approach makes sense to you.
+9. Docker & Runtime Requirements
+The DRF backend must be Dockerized.
+The backend should be easy to start using the documented Docker Compose command.
+Use an appropriate .dockerignore and .gitignore.
+Do not commit secrets.
+Because SQLite is file-based, make sure you understand and document where the database file lives and what happens when the container is rebuilt or removed.
+Required migrations and seed-data instructions must be documented.
+docker compose up --build
+10. Two-Day Plan
+Two-day limit: Please prioritize a coherent, working core product over an unfinished collection of stretch features. It is completely fine to document what you would do next if time runs out.
+Time block
+Primary tasks
+Expected checkpoint
+Day 1 - Morning
+Project setup; Django/DRF models; migrations; seed data; serializers; core endpoints; business validation; workflow actions; activity history; filtering/search; Docker.
+DRF API runs in Docker against SQLite and can demonstrate core workflow rules.
+Day 1 - Afternoon
+Next.js setup; API layer; dashboard; work-items list; filtering/search; begin Kanban board and state transitions.
+Web app is connected to the DRF API. Dashboard and main investigation/list flow work; board is functional or substantially complete.
+Day 2 - Morning
+Complete Kanban behavior; work-item detail command center; comments; activity timeline; assignment/status actions; responsive polish. Start Flutter integration.
+Primary web workflow is end-to-end and handles success/error/loading states.
+Day 2 - Afternoon
+Flutter list/detail/actions; bug fixing; tests where practical; README; Git cleanup; final QA and demo preparation.
+Runnable submission with documented setup, coherent Git history and a demonstrable mobile flow.
+11. What to Prioritize
+11.1 Core deliverables - focus here first
+☐ 
+DRF API using Django default SQLite database.
+☐ 
+Dockerized backend.
+☐ 
+Work-item model and related project/comment/activity data.
+☐ 
+Backend workflow validation and dedicated transition behavior.
+☐ 
+Search, filtering and ordering.
+☐ 
+Dashboard aggregation endpoint.
+☐ 
+Next.js operational dashboard.
+☐ 
+Next.js work-items investigation/list view.
+☐ 
+Next.js Kanban/workflow board.
+☐ 
+Next.js work-item detail command center with comments and activity timeline.
+☐ 
+Loading, empty, error and mutation states.
+☐ 
+Flutter work-items list and detail flow consuming the DRF API.
+☐ 
+Flutter status update and comment action.
+☐ 
+README and meaningful Git history.
+11.2 Stretch goals - only if the core is stable
+JWT authentication and protected routes.
+AI-assisted incident summary/title/priority suggestion.
+Dark mode.
+Automated backend or frontend tests beyond the minimum demonstrated coverage.
+Offline/cache strategy in Flutter.
+Advanced analytics or an additional project-health view.
+Role-based permissions.
+12. Working Guidelines
+Guideline
+Expectation
+Architecture
+Keep domain logic out of random UI components. Use clear separation of concerns and avoid giant files.
+API design
+Use meaningful HTTP status codes and return useful validation errors. Business rules must be enforced server-side.
+Type safety
+Use TypeScript types/interfaces sensibly. Avoid unnecessary any usage.
+Configuration
+Centralize API base URLs/configuration. Do not scatter localhost strings through components.
+Security
+Do not expose secrets or AI/API keys in browser/mobile code. If AI is attempted, call the provider from the backend.
+UX
+Design for clear hierarchy, responsiveness, keyboard/mouse practicality on web and understandable failure states.
+Error handling
+Handle network failures and rejected business actions intentionally.
+Git
+Commit incrementally with descriptive messages. A few clear, incremental commits are much more useful than one final mega-commit.
+Documentation
+Document setup, assumptions, known limitations and what would be improved with more time.
+AI usage
+You are welcome to use AI assistance, but be ready to explain the important code and decisions during the review.
+13. Git & Submission Guidelines
+Please commit your work incrementally so I can follow how the solution developed. Good commit messages might look like:
+feat: add work item models and migrations
+feat: implement workflow transition validation
+feat: add dashboard aggregation endpoint
+chore: dockerize DRF backend
+feat: build work items dashboard
+feat: implement kanban state transitions
+feat: add work item activity timeline
+feat: integrate Flutter work item list
+fix: restore card after rejected transition
+Please include the following in your final README:
+Project overview and architecture.
+Prerequisites and setup steps.
+How to run the DRF backend with Docker.
+How to run the Next.js application.
+How to run the Flutter application.
+How to seed/reset development data.
+Configuration/environment variables.
+Assumptions and known limitations.
+What you would improve with additional time.
+14. For My Evaluation - Optional Change Request (Do Not Share in Advance)
+I will not provide this at the start. I will only introduce this if the core application is stable and there is enough time remaining. The purpose is to see how the solution handles a change in requirements, not to create an extra pass/fail hurdle.
+Change request: 
+Work items now need tags. A work item may have multiple tags (for example M-Pesa, Production, Payments), and the web work-items view must be filterable by tag. Flutter does not need to implement tags.
+15. For My Evaluation - Optional Debugging Exercise (Do Not Share in Advance)
+I can use the following example during the review and ask the developer why it may fail during a partial update and how they would correct the behavior:
+def validate(self, attrs):
+    if attrs["status"] == "RESOLVED":
+        if not attrs["resolution_note"]:
+            raise serializers.ValidationError(
+                "Resolution note is required."
+            )
+    return attrs
+My note: A PATCH request may omit status and/or resolution_note, so direct indexing can raise KeyError and may also ignore values already present on the instance. I’ll pay attention to the developer’s debugging process and understanding of partial updates, not only whether they identify the answer immediately.
+16. My Evaluation Rubric
+Area
+Weight
+What to look for
+Python + DRF
+15
+Models, serializers, validation, views/actions, clean API behavior and understanding of DRF.
+Business logic / API design
+10
+Workflow transitions, derived values, activity history and meaningful errors.
+Next.js + TypeScript
+15
+Component design, state, API integration, type safety and maintainability.
+UI/UX
+12
+Information hierarchy, responsive layout, interaction quality and polish.
+Complex frontend state
+8
+Kanban transitions, optimistic/reconciled state, failure recovery and filters.
+SQLite / data modelling
+5
+Relationships, migrations and sensible treatment of derived/persistent data.
+Docker
+8
+Reliable container startup, persistence awareness and debugging ability.
+Flutter
+7
+Learning speed, navigation, API calls, async/error state and structure.
+Code architecture
+5
+Separation of concerns, naming, reusable logic and file organization.
+Debugging / problem solving
+5
+Evidence-based investigation rather than random changes.
+Git workflow
+3
+Incremental, meaningful commits.
+Documentation / explanation
+2
+README quality and ability to explain decisions.
+Total
+100
+16.1 How I’ll interpret the overall result
+Score
+Interpretation
+90-100
+Very strong. Likely ready to own features quickly after learning our team conventions.
+80-89
+Strong. Mainly needs our team conventions and targeted stack onboarding.
+70-79
+Good intermediate level. Should become productive with some mentoring and stack guidance.
+60-69
+Good fundamentals, but would need more support before owning end-to-end work independently.
+50-59
+Would currently need fairly close guidance for this level of role.
+Below 50
+Would benefit from more development of the core engineering fundamentals before taking on this stack independently.
+Scoring principle: I will not over-penalize Flutter polish. Flutter has already been described as an entry-level skill. I will focus on how quickly the developer learns and whether the Flutter code is structured sensibly within the two-day window. I will hold TypeScript/Next.js, Python fundamentals and UI/UX to a higher standard because those are stated strengths.
+17. Final Demo - Questions I’ll Ask
+I’ll use a 20-30 minute walkthrough and ask the developer to demonstrate the system and explain selected code rather than only presenting screenshots.
+Area
+Question
+Backend
+Where are workflow transition rules enforced, and why did you put them there?
+Backend
+How is the incident reference generated? What edge cases would matter at higher concurrency?
+Data
+Why is overdue derived rather than necessarily stored?
+DRF
+How does your implementation handle PATCH/partial updates?
+Docker
+Where does the SQLite file live, and what happens if the container is deleted or rebuilt?
+Next.js
+How do you manage API state and mutation errors?
+Kanban
+What happens if the UI moves a card but the backend rejects the status change?
+UI/UX
+Which interaction or layout decisions did you make intentionally and why?
+Flutter
+How did you organize API access, models and screens? What would change if the app grew substantially?
+Architecture
+What is the first part you would refactor or strengthen before production?
+AI usage
+Choose a non-trivial section of the code. Explain how it works and why it exists.
+18. Signals I’ll Pay Attention To
+Strong signals
+Risk signals
+Reads logs and error responses before changing code.
+Random trial-and-error changes without identifying the failing layer.
+Keeps backend business rules authoritative.
+Relies on frontend validation as the only enforcement.
+Uses small, understandable modules and clear API boundaries.
+Large components/files with duplicated fetch and state logic.
+Can explain code generated or suggested by AI.
+Cannot explain non-trivial code in the submission.
+Chooses reasonable scope under the two-day limit.
+Pursues stretch features while mandatory workflows remain broken.
+Makes UI decisions that support real operational use.
+Visually attractive UI that hides state, errors or important actions.
+19. My Final Review Checklist
+☐ 
+Backend starts successfully using the documented Docker command.
+☐ 
+SQLite migrations apply cleanly and test/seed data can be created.
+☐ 
+Next.js application connects to the API using centralized configuration.
+☐ 
+Dashboard metrics and attention queue use real backend data.
+☐ 
+Kanban transitions persist and rejected transitions are handled correctly.
+☐ 
+Work-item detail view includes comments and activity timeline.
+☐ 
+Search/filter/order behavior works.
+☐ 
+Flutter connects to the same API and can list/view/update/comment on work items.
+☐ 
+No secrets are committed.
+☐ 
+README contains setup, assumptions and limitations.
+☐ 
+Git history is meaningful enough to review development progression.
+☐ The developer can demonstrate and explain the solution.
+End of Onboarding Challenge Document
