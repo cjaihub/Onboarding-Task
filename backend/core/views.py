@@ -1,6 +1,7 @@
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 import django_filters
 from django.db import models
@@ -16,6 +17,7 @@ from .serializers import (
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.all()
@@ -38,6 +40,7 @@ class WorkItemFilter(django_filters.FilterSet):
 class WorkItemViewSet(viewsets.ModelViewSet):
     queryset = WorkItem.objects.all().order_by('-created_at')
     serializer_class = WorkItemSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = WorkItemFilter
     search_fields = ['reference_number', 'title', 'description']
@@ -68,7 +71,7 @@ class WorkItemViewSet(viewsets.ModelViewSet):
                 message=f"You have been assigned to task: {work_item.title}"
             )
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def transition(self, request, pk=None):
         work_item = self.get_object()
         new_status = request.data.get('status')
@@ -85,7 +88,7 @@ class WorkItemViewSet(viewsets.ModelViewSet):
         except ValueError as e:
             return Response({'status': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def assign(self, request, pk=None):
         work_item = self.get_object()
         user_id = request.data.get('assigned_to')
@@ -114,7 +117,7 @@ class WorkItemViewSet(viewsets.ModelViewSet):
         except User.DoesNotExist:
             return Response({'error': 'User not found.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['get', 'post'])
+    @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticatedOrReadOnly])
     def comments(self, request, pk=None):
         work_item = self.get_object()
         
@@ -150,6 +153,7 @@ class WorkItemViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -222,24 +226,25 @@ def dashboard_stats(request):
 class WorkflowViewSet(viewsets.ModelViewSet):
     queryset = Workflow.objects.all().order_by('-created_at')
     serializer_class = WorkflowSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     search_fields = ['name', 'description']
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def activate(self, request, pk=None):
         workflow = self.get_object()
         workflow.is_active = True
         workflow.save()
         return Response({'status': 'Workflow activated'})
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def deactivate(self, request, pk=None):
         workflow = self.get_object()
         workflow.is_active = False
         workflow.save()
         return Response({'status': 'Workflow deactivated'})
         
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def execute(self, request, pk=None):
         from .workflow_engine import execute_workflow_run
         workflow = self.get_object()

@@ -5,11 +5,12 @@ import '../services/api_service.dart';
 class WorkItemRepository {
   final ApiService _apiService = ApiService();
 
-  Future<List<WorkItem>> getWorkItems({String? search, String? status, String? priority}) async {
+  Future<List<WorkItem>> getWorkItems({String? search, String? status, String? priority, int? pageSize}) async {
     String endpoint = '/work-items/?';
     if (search != null && search.isNotEmpty) endpoint += 'search=$search&';
     if (status != null && status.isNotEmpty) endpoint += 'status=$status&';
     if (priority != null && priority.isNotEmpty) endpoint += 'priority=$priority&';
+    if (pageSize != null) endpoint += 'page_size=$pageSize&';
 
     final response = await _apiService.get(endpoint);
     if (response is Map<String, dynamic> && response.containsKey('results')) {

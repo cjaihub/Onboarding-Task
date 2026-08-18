@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiException implements Exception {
   final int statusCode;
@@ -24,17 +25,22 @@ class ApiService {
   // Use 10.0.2.2 for Android emulator, localhost for Web/Desktop
   static String get baseUrl {
     if (kIsWeb) {
-      return 'http://127.0.0.1:8000/api';
+      return 'http://localhost:8000/api';
     }
     // Android emulator alias for localhost
     return 'http://10.0.2.2:8000/api';
   }
   
-  // Basic Auth matching backend seed users for testing
-  static const Map<String, String> defaultHeaders = {
-    'Content-Type': 'application/json',
-    'Authorization': 'Basic YWxpY2U6YWxpY2U=' // alice:alice
-  };
+  static final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
+  Future<Map<String, String>> _getHeaders() async {
+    final headers = {'Content-Type': 'application/json'};
+    final token = await _storage.read(key: 'access_token');
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
+  }
 
   dynamic _handleResponse(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -61,7 +67,8 @@ class ApiService {
 
   Future<dynamic> get(String endpoint) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl$endpoint'), headers: defaultHeaders).timeout(const Duration(seconds: 10));
+      final headers = await _getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl$endpoint'), headers: headers).timeout(const Duration(seconds: 10));
       return _handleResponse(response);
     } on SocketException {
       throw Exception('Network failure. Please check your connection.');
@@ -73,9 +80,10 @@ class ApiService {
 
   Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.post(
         Uri.parse('$baseUrl$endpoint'),
-        headers: defaultHeaders,
+        headers: headers,
         body: json.encode(body),
       ).timeout(const Duration(seconds: 10));
       return _handleResponse(response);

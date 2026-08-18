@@ -5,6 +5,7 @@ import '../../../widgets/error_view.dart';
 import '../../../widgets/loading_view.dart';
 import '../../notifications/screens/notifications_modal.dart';
 import '../../../models/dashboard_stats.dart';
+import '../../navigation/widgets/app_drawer.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -18,6 +19,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   DashboardStats? _stats;
   String? _error;
   bool _isLoading = true;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -87,6 +89,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     if (_error != null && _stats == null) {
       return Scaffold(
+        key: _scaffoldKey,
+        drawer: const AppDrawer(),
         appBar: AppBar(title: const Text('Dashboard')),
         body: SafeArea(child: ErrorView(message: _error!, onRetry: _fetchData)),
       );
@@ -94,13 +98,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (_stats == null || (_isLoading && _stats == null)) {
       return Scaffold(
+        key: _scaffoldKey,
+        drawer: const AppDrawer(),
         appBar: AppBar(title: const Text('Dashboard')),
         body: const SafeArea(child: LoadingView()),
       );
     }
 
     return Scaffold(
+      key: _scaffoldKey,
+      drawer: const AppDrawer(),
       appBar: AppBar(
+        leading: IconButton(
+          icon: const CircleAvatar(
+            radius: 14,
+            backgroundColor: Colors.grey,
+            child: Icon(Icons.person, size: 18, color: Colors.white),
+          ),
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+        ),
         title: const Text('Dashboard'),
         actions: [
           IconButton(

@@ -64,7 +64,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     }
 
     try {
-      final items = await _workRepo.getWorkItems(page_size: 200);
+      final items = await _workRepo.getWorkItems(pageSize: 200);
       final stats = await _dashRepo.getDashboardStats();
       if (mounted) {
         setState(() {
