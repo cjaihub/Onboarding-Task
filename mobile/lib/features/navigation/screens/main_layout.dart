@@ -17,8 +17,8 @@ class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
-    const BoardScreen(),
     const DashboardScreen(),
+    const BoardScreen(),
     const WorkItemsScreen(),
     const ProjectsScreen(),
     const ActivityScreen(),
@@ -43,12 +43,12 @@ class _MainLayoutState extends State<MainLayout> {
         unselectedItemColor: Colors.white54,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.developer_board),
-            label: 'Board',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
             label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.developer_board),
+            label: 'Board',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.list_alt),
