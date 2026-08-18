@@ -35,11 +35,11 @@ export default function ApiNode({ data }: { data: Record<string, unknown> }) {
           </span>
         </div>
         
-        {data.logs && (
+        {data.logs ? (
           <div className="mt-2 pt-2 border-t border-[#333] max-h-32 overflow-y-auto whitespace-pre-wrap">
             {String(data.logs)}
           </div>
-        )}
+        ) : null}
       </div>
 
       <Handle type="source" position={Position.Bottom} className="w-2 h-2 bg-gray-500 border-none" />
