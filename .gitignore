@@ -1,15 +1,3 @@
-# Ignore the markdown files specified by the user
-AGENTS.md
-ARCHITECTURE.md
-DOMAIN_RULES.md
-API_CONTRACT.md
-UI_SPEC.md
-DEVELOPMENT.md
-TEST_PLAN.md
-QA_CHECKLIST.md
-DECISIONS.md
-ASSUMPTIONS.md
-
 # Python / Django
 __pycache__/
 *.py[cod]

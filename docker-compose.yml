@@ -8,5 +8,17 @@ services:
     volumes:
       - ./backend:/app
       - ./data:/app/data  # External mount for persistent sqlite if needed
-    environment:
       - DEBUG=1
+
+  web:
+    build: ./web
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api
+    depends_on:
+      - backend
