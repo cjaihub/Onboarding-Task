@@ -10,6 +10,7 @@ import {
   clearTokens,
   getAccessToken,
   refreshAccessToken,
+  updateProfile as apiUpdateProfile,
   type AuthUser,
 } from '@/api/auth';
 
@@ -27,6 +28,16 @@ interface AuthContextType {
     last_name: string;
     password: string;
     password_confirm: string;
+  }) => Promise<void>;
+  updateProfile: (data: {
+    first_name?: string;
+    last_name?: string;
+    profile?: {
+      bio?: string;
+      role?: string;
+      avatar_url?: string;
+      phone_number?: string;
+    };
   }) => Promise<void>;
   logout: () => Promise<void>;
   // Legacy compat: expose currentUser + users for components that still use them
@@ -86,6 +97,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
+  const updateProfile = useCallback(async (data: Parameters<AuthContextType['updateProfile']>[0]) => {
+    const updatedProfile = await apiUpdateProfile(data);
+    if (updatedProfile) {
+      setUser(updatedProfile);
+    }
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -95,6 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         register,
         logout,
+        updateProfile,
         // Legacy compat
         currentUser: user,
         users: user ? [user] : [],

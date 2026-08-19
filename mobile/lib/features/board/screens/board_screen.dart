@@ -9,6 +9,7 @@ import '../../../widgets/error_view.dart';
 import '../../../widgets/loading_view.dart';
 import '../../work_items/screens/work_item_detail_screen.dart';
 import '../../../services/websocket_service.dart';
+import '../../../services/api_service.dart';
 
 class BoardScreen extends ConsumerStatefulWidget {
   const BoardScreen({Key? key}) : super(key: key);
@@ -35,11 +36,8 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     _fetchData();
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // For Windows/Localhost emulator we use 10.0.2.2. Assuming this runs on local android emulator
-      // or similar if we use default API settings. Let's use standard ws url.
-      // Ideally, the URL comes from a config file.
       final wsService = ref.read(webSocketServiceProvider);
-      wsService.connect('ws://10.0.2.2:8000/ws/board/');
+      wsService.connect('${ApiService.wsBaseUrl}/board/');
       wsService.addListener(_onWebSocketEvent);
     });
   }

@@ -1,5 +1,6 @@
 "use client"
 import * as React from "react"
+import { downloadFile } from "../../lib/api-client"
 import { useWorkItemQuery, useCommentsQuery, useActivityQuery, useUsersQuery, useProjectsQuery } from "../../hooks/queries"
 import { useTransitionWorkItemMutation, useUpdateWorkItemMutation, useAssignWorkItemMutation } from "../../hooks/mutations"
 import { Status, Comment, Activity } from "../../types/api"
@@ -491,19 +492,20 @@ export function WorkItemDetailView({ id }: { id: number }) {
                                 />
                               </div>
                             ) : (
-                              <a 
-                                href={c.attachment} 
-                                target="_blank" 
-                                rel="noreferrer"
-                                className="flex items-center gap-3 p-3 rounded-lg border hover:bg-black/20 transition-colors"
+                              <button 
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  downloadFile(c.attachment!, c.attachment!.split('/').pop() || 'download');
+                                }}
+                                className="flex items-center gap-3 p-3 rounded-lg border hover:bg-black/20 transition-colors w-full text-left"
                                 style={{ borderColor: 'var(--border-subtle)', background: 'var(--surface-base)' }}
                               >
-                                <FileText className="h-6 w-6 text-red-500" />
-                                <div className="overflow-hidden">
+                                <FileText className="h-6 w-6 text-red-500 shrink-0" />
+                                <div className="overflow-hidden flex-1">
                                   <p className="text-sm font-bold text-white truncate">{c.attachment.split('/').pop()}</p>
                                   <p className="text-xs text-gray-500 font-medium uppercase">Click to download</p>
                                 </div>
-                              </a>
+                              </button>
                             )}
                           </div>
                         )}

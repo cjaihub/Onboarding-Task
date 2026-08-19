@@ -41,6 +41,11 @@ class AuthService {
     return User.fromJson(response);
   }
 
+  Future<User> updateProfile(Map<String, dynamic> data) async {
+    final response = await _apiService.patch('/auth/me/', data);
+    return User.fromJson(response);
+  }
+
   Future<void> logout() async {
     try {
       final refreshToken = await _storage.read(key: 'refresh_token');

@@ -98,6 +98,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> updateProfile(Map<String, dynamic> data) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final user = await _authService.updateProfile(data);
+      state = state.copyWith(
+        isLoading: false,
+        user: user,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+      rethrow;
+    }
+  }
+
   Future<void> logout() async {
     state = state.copyWith(isLoading: true);
     await _authService.logout();

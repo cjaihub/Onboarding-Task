@@ -4,8 +4,10 @@ import '../../../models/project.dart';
 import '../../../repositories/project_repository.dart';
 import '../../../widgets/error_view.dart';
 import '../../../widgets/loading_view.dart';
+import '../../auth/screens/user_profile_screen.dart';
 import '../../notifications/screens/notifications_modal.dart';
 import 'project_detail_screen.dart';
+import 'project_setup_wizard_screen.dart';
 
 class ProjectsScreen extends StatefulWidget {
   const ProjectsScreen({Key? key}) : super(key: key);
@@ -68,19 +70,111 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                item.name,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              // ── Name + Type Badge ──────────────────────────────────
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      item.name,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: UsalamaTheme.primaryRed.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: UsalamaTheme.primaryRed.withOpacity(0.25)),
+                    ),
+                    child: Text(
+                      item.projectType,
+                      style: const TextStyle(
+                          fontSize: 10,
+                          color: UsalamaTheme.primaryRed,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5),
+                    ),
+                  ),
+                ],
               ),
+
+              // ── Description ────────────────────────────────────────
               if (item.description != null && item.description!.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(
                   item.description!,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white70),
+                  style: const TextStyle(color: Colors.white60, fontSize: 13),
                 ),
               ],
+
+              const SizedBox(height: 14),
+              const Divider(height: 1, color: Colors.white12),
+              const SizedBox(height: 12),
+
+              // ── Footer: members + item count ───────────────────────
+              Row(
+                children: [
+                  // Member avatar stack
+                  if (item.membersDetail.isNotEmpty)
+                    SizedBox(
+                      height: 28,
+                      width: (item.membersDetail.length.clamp(1, 4) * 22.0) + 10,
+                      child: Stack(
+                        children: item.membersDetail.take(4).toList().asMap().entries.map((e) {
+                          final idx = e.key;
+                          final m = e.value;
+                          final initials = m.firstName.isNotEmpty && m.lastName.isNotEmpty
+                              ? '${m.firstName[0]}${m.lastName[0]}'.toUpperCase()
+                              : m.username.substring(0, m.username.length >= 2 ? 2 : 1).toUpperCase();
+
+                          return Positioned(
+                            left: idx * 20.0,
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => UserProfileScreen(member: m),
+                                  ),
+                                );
+                              },
+                              child: m.profile?.avatarUrl.isNotEmpty == true
+                                  ? CircleAvatar(
+                                      radius: 13,
+                                      backgroundImage: NetworkImage(m.profile!.avatarUrl),
+                                    )
+                                  : CircleAvatar(
+                                      radius: 13,
+                                      backgroundColor: UsalamaTheme.primaryRed.withOpacity(0.22),
+                                      child: Text(initials,
+                                          style: const TextStyle(
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.bold,
+                                              color: UsalamaTheme.primaryRed)),
+                                    ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+
+                  const Spacer(),
+
+                  // Item count
+                  Row(
+                    children: [
+                      const Icon(Icons.task_outlined, size: 13, color: Colors.white38),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${item.members.length} member${item.members.length != 1 ? 's' : ''}',
+                        style: const TextStyle(color: Colors.white38, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -135,6 +229,21 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   },
                 ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const ProjectSetupWizardScreen(),
+            ),
+          );
+          if (result == true) {
+            _fetchData();
+          }
+        },
+        backgroundColor: UsalamaTheme.primaryRed,
+        child: const Icon(Icons.add),
       ),
     );
   }

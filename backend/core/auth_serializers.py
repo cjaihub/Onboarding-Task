@@ -3,6 +3,9 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
+from .models import UserProfile
+from .serializers import UserProfileSerializer as CoreUserProfileSerializer
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Extend the default JWT response to include user profile data."""
 
@@ -15,8 +18,20 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['first_name'] = user.first_name
         data['last_name'] = user.last_name
         data['is_staff'] = user.is_staff
+        
+        # Add profile data if exists
+        try:
+            profile = user.profile
+            data['profile'] = {
+                'bio': profile.bio,
+                'role': profile.role,
+                'avatar_url': profile.avatar_url,
+                'phone_number': profile.phone_number
+            }
+        except UserProfile.DoesNotExist:
+            data['profile'] = None
+            
         return data
-
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
@@ -43,12 +58,28 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
-
 class UserProfileSerializer(serializers.ModelSerializer):
+    profile = CoreUserProfileSerializer()
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_staff', 'date_joined']
-        read_only_fields = ['id', 'date_joined', 'is_staff']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_staff', 'date_joined', 'profile']
+        read_only_fields = ['id', 'date_joined', 'is_staff', 'username']
+
+    def update(self, instance, validated_data):
+        profile_data = validated_data.pop('profile', {})
+        # Update user fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # Update profile fields
+        profile, _ = UserProfile.objects.get_or_create(user=instance)
+        for attr, value in profile_data.items():
+            setattr(profile, attr, value)
+        profile.save()
+
+        return instance
 
 
 class ChangePasswordSerializer(serializers.Serializer):

@@ -3,7 +3,7 @@ import type { VisualCapture, Notification, CaptureAnnotation } from '../types/co
 // Derive the collaboration base URL at call time (client-only).
 // NEXT_PUBLIC_API_URL e.g. "http://127.0.0.1:8000/api" → base = "http://127.0.0.1:8000"
 function collabBase(): string {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api'
   const base = apiUrl.endsWith('/api') ? apiUrl.slice(0, -4) : apiUrl.replace(/\/api$/, '')
   return `${base}/api/collaboration`
 }

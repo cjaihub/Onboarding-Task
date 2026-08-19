@@ -8,6 +8,7 @@ services:
     volumes:
       - ./backend:/app
       - ./data:/app/data  # External mount for persistent sqlite if needed
+    environment:
       - DEBUG=1
 
   web:

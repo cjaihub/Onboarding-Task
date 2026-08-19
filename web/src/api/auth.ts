@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api'
 
 // ── Token storage ─────────────────────────────────────────────────────────────
 
@@ -35,6 +35,12 @@ export interface AuthUser {
   is_staff: boolean
   access: string
   refresh: string
+  profile?: {
+    bio: string
+    role: string
+    avatar_url: string
+    phone_number: string
+  } | null
 }
 
 export async function login(username: string, password: string): Promise<AuthUser> {
@@ -44,7 +50,13 @@ export async function login(username: string, password: string): Promise<AuthUse
     body: JSON.stringify({ username, password }),
   })
   if (!res.ok) {
-    const err = await res.json()
+    let err: any = {}
+    const contentType = res.headers.get('content-type')
+    if (contentType && contentType.includes('application/json')) {
+      err = await res.json()
+    } else {
+      throw new Error(`Server returned ${res.status}: ${res.statusText}`)
+    }
     throw new Error(err.detail || err.non_field_errors?.[0] || 'Invalid credentials')
   }
   return res.json()
@@ -64,11 +76,17 @@ export async function register(data: {
     body: JSON.stringify(data),
   })
   if (!res.ok) {
-    const err = await res.json()
+    let err: any = {}
+    const contentType = res.headers.get('content-type')
+    if (contentType && contentType.includes('application/json')) {
+      err = await res.json()
+    } else {
+      throw new Error(`Server returned ${res.status}: ${res.statusText}`)
+    }
     // Surface the first field error
     const firstKey = Object.keys(err)[0]
-    const msg = Array.isArray(err[firstKey]) ? err[firstKey][0] : err[firstKey]
-    throw new Error(`${firstKey}: ${msg}`)
+    const msg = firstKey ? (Array.isArray(err[firstKey]) ? err[firstKey][0] : err[firstKey]) : 'Registration failed'
+    throw new Error(`${firstKey ? firstKey + ': ' : ''}${msg}`)
   }
   return res.json()
 }
@@ -114,6 +132,39 @@ export async function getMe(): Promise<Omit<AuthUser, 'access' | 'refresh'> | nu
   return res.json()
 }
 
+export async function updateProfile(data: {
+  first_name?: string
+  last_name?: string
+  profile?: {
+    bio?: string
+    role?: string
+    avatar_url?: string
+    phone_number?: string
+  }
+}): Promise<Omit<AuthUser, 'access' | 'refresh'> | null> {
+  const token = getAccessToken()
+  if (!token) return null
+  const res = await fetch(`${API_BASE}/auth/me/`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    let err: any = {}
+    const contentType = res.headers.get('content-type')
+    if (contentType && contentType.includes('application/json')) {
+      err = await res.json()
+    } else {
+      throw new Error(`Server returned ${res.status}: ${res.statusText}`)
+    }
+    throw new Error(err.detail || 'Failed to update profile')
+  }
+  return res.json()
+}
+
 export async function logout(refresh?: string): Promise<void> {
   const token = getAccessToken()
   if (token) {
@@ -146,9 +197,15 @@ export async function changePassword(data: {
     body: JSON.stringify(data),
   })
   if (!res.ok) {
-    const err = await res.json()
+    let err: any = {}
+    const contentType = res.headers.get('content-type')
+    if (contentType && contentType.includes('application/json')) {
+      err = await res.json()
+    } else {
+      throw new Error(`Server returned ${res.status}: ${res.statusText}`)
+    }
     const firstKey = Object.keys(err)[0]
-    const msg = Array.isArray(err[firstKey]) ? err[firstKey][0] : err[firstKey]
-    throw new Error(`${firstKey}: ${msg}`)
+    const msg = firstKey ? (Array.isArray(err[firstKey]) ? err[firstKey][0] : err[firstKey]) : 'Password change failed'
+    throw new Error(`${firstKey ? firstKey + ': ' : ''}${msg}`)
   }
 }

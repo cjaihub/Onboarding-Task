@@ -7,21 +7,44 @@ import django_filters
 from django.db import models
 
 from django.contrib.auth.models import User
-from .models import Project, WorkItem, Comment, Activity, Workflow, WorkflowExecution, WorkflowExecutionStep
+from .models import Project, WorkItem, Comment, Activity, Workflow, WorkflowExecution, WorkflowExecutionStep, ProjectAttachment, ProjectComment
 from .serializers import (
     ProjectSerializer, WorkItemSerializer, CommentSerializer, 
     ActivitySerializer, UserSerializer, WorkflowSerializer,
-    WorkflowExecutionSerializer, WorkflowExecutionStepSerializer
+    WorkflowExecutionSerializer, WorkflowExecutionStepSerializer,
+    ProjectAttachmentSerializer, ProjectCommentSerializer
 )
+
+class ProjectAttachmentViewSet(viewsets.ModelViewSet):
+    queryset = ProjectAttachment.objects.all()
+    serializer_class = ProjectAttachmentSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['project']
+
+    def perform_create(self, serializer):
+        serializer.save(uploaded_by=self.request.user)
+
+class ProjectCommentViewSet(viewsets.ModelViewSet):
+    queryset = ProjectComment.objects.all().order_by('-created_at')
+    serializer_class = ProjectCommentSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['project']
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
 
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
 
 class WorkItemFilter(django_filters.FilterSet):
     tags = django_filters.CharFilter(method='filter_tags')
@@ -40,7 +63,7 @@ class WorkItemFilter(django_filters.FilterSet):
 class WorkItemViewSet(viewsets.ModelViewSet):
     queryset = WorkItem.objects.all().order_by('-created_at')
     serializer_class = WorkItemSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = WorkItemFilter
     search_fields = ['reference_number', 'title', 'description']
@@ -117,7 +140,7 @@ class WorkItemViewSet(viewsets.ModelViewSet):
         except User.DoesNotExist:
             return Response({'error': 'User not found.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticatedOrReadOnly])
+    @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated])
     def comments(self, request, pk=None):
         work_item = self.get_object()
         
@@ -153,7 +176,7 @@ class WorkItemViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -161,8 +184,12 @@ class CommentViewSet(viewsets.ModelViewSet):
 class ActivityViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Activity.objects.all()
     serializer_class = ActivitySerializer
+    permission_classes = [IsAuthenticated]
+
+from rest_framework.decorators import api_view, action, permission_classes
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def metadata(request):
     from .models import Project
     project_types = [{'value': k, 'label': v} for k, v in Project.PROJECT_TYPES]
@@ -185,6 +212,7 @@ def metadata(request):
     })
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def dashboard_stats(request):
     total = WorkItem.objects.count()
     
@@ -226,7 +254,7 @@ def dashboard_stats(request):
 class WorkflowViewSet(viewsets.ModelViewSet):
     queryset = Workflow.objects.all().order_by('-created_at')
     serializer_class = WorkflowSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     search_fields = ['name', 'description']
 
@@ -280,11 +308,13 @@ class WorkflowViewSet(viewsets.ModelViewSet):
 class WorkflowExecutionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = WorkflowExecution.objects.all().order_by('-started_at')
     serializer_class = WorkflowExecutionSerializer
+    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['workflow', 'status']
 
 class WorkflowExecutionStepViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = WorkflowExecutionStep.objects.all().order_by('started_at')
     serializer_class = WorkflowExecutionStepSerializer
+    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['execution', 'status']

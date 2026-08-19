@@ -1,5 +1,26 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    bio = models.TextField(blank=True)
+    role = models.CharField(max_length=100, blank=True)
+    avatar_url = models.URLField(max_length=500, blank=True)
+    phone_number = models.CharField(max_length=20, blank=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s Profile"
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    instance.profile.save()
 
 class Project(models.Model):
     PROJECT_TYPES = [
@@ -21,6 +42,25 @@ class Project(models.Model):
 
     def __str__(self):
         return self.name
+
+class ProjectAttachment(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='attachments')
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='project_attachments')
+    file = models.FileField(upload_to='project_attachments/')
+    description = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.file.name} - {self.project.name}"
+
+class ProjectComment(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='project_comments')
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Comment by {self.author.username} on {self.project.name}"
 
 class WorkItem(models.Model):
     STATUS_CHOICES = [

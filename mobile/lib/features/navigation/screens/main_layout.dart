@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme.dart';
 import '../../board/screens/board_screen.dart';
-import '../../dashboard/screens/dashboard_screen.dart';
+import '../../projects/screens/project_dashboard_screen.dart';
 import '../../work_items/screens/work_items_screen.dart';
 import '../../projects/screens/projects_screen.dart';
 import '../../activity/screens/activity_screen.dart';
@@ -17,7 +17,7 @@ class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
-    const DashboardScreen(),
+    const ProjectDashboardScreen(),
     const BoardScreen(),
     const WorkItemsScreen(),
     const ProjectsScreen(),

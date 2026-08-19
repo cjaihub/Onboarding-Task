@@ -225,18 +225,6 @@ export function Header() {
           </div>
         </div>
 
-        {/* New Item CTA */}
-        <button
-          className="hidden sm:flex items-center justify-center rounded-xl px-4 py-2 text-sm font-bold text-white transition-colors shadow-sm"
-          style={{
-            background: "var(--brand)",
-            boxShadow: "0 2px 8px rgba(220,38,38,0.25)",
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = "var(--brand-hover)"}
-          onMouseLeave={e => e.currentTarget.style.background = "var(--brand)"}
-        >
-          + New Item
-        </button>
       </div>
     </header>
   )

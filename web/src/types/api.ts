@@ -1,12 +1,41 @@
 export type Status = 'OPEN' | 'IN_PROGRESS' | 'REVIEW' | 'RESOLVED' | 'CLOSED';
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
+export interface UserProfile {
+  bio: string;
+  role: string;
+  avatar_url: string;
+  phone_number: string;
+}
+
 export interface User {
   id: number;
   username: string;
   email: string;
   first_name?: string;
   last_name?: string;
+  profile?: UserProfile;
+}
+
+export interface ProjectAttachment {
+  id: number;
+  project: number;
+  uploaded_by?: number;
+  uploaded_by_name?: string;
+  file: string;
+  file_url: string;
+  description: string;
+  created_at: string;
+}
+
+export interface ProjectComment {
+  id: number;
+  project: number;
+  author: number;
+  author_name: string;
+  author_avatar?: string;
+  message: string;
+  created_at: string;
 }
 
 export interface Project {
@@ -17,6 +46,9 @@ export interface Project {
   tech_tools: string[];
   created_at: string;
   members?: number[];
+  members_detail?: User[];
+  attachments?: ProjectAttachment[];
+  comments?: ProjectComment[];
 }
 
 export interface MetadataOption {

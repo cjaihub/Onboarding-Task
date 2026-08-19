@@ -92,3 +92,10 @@ The mobile app provides a clean interface to list work items and perform quick a
 - **Real-Time Synchronization**: Django Channels broadcasts WebSocket events (`board` group) via `post_save` signals on Activities/Comments/WorkItems. Both Web and Mobile clients intercept these payloads and instantly invalidate their local caches (React Query / Riverpod) to maintain cross-platform state parity without polling.
 - **Optimized Dashboards**: The Next.js dashboard uses a custom `GET /api/dashboard/` endpoint which leverages Django ORM's `annotate` and `values` to aggregate statistics on the server side, preventing the need to download large arrays of items to the frontend.
 - **Mobile Architecture**: Moved away from a monolithic `main.dart` to a clean folder structure (`models/`, `services/`, `screens/`) adhering to Flutter best practices.
+
+## Recent Updates
+
+- **Authentication System**: Complete auth flows with login and profile management across all platforms.
+- **Backend Enhancements**: Added `UserProfile`, `ProjectAttachment`, and `ProjectComment` models with corresponding API endpoints.
+- **Web Frontend**: Introduced `/login` and `/profile` routes, `AuthContext`, and interactive Project Dashboards and Tables.
+- **Mobile Companion**: Implemented auth features (`LoginScreen`, `ProfileScreen`), `ProjectDashboardScreen`, and a `ProjectSetupWizardScreen`.

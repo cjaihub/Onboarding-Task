@@ -3,7 +3,7 @@
  * Reads NEXT_PUBLIC_API_URL at runtime, falls back to localhost.
  */
 export function backendBase(): string {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api'
   // Strip trailing /api suffix
   return apiUrl.endsWith('/api') ? apiUrl.slice(0, -4) : apiUrl.replace(/\/api$/, '')
 }

@@ -1,17 +1,61 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Project, WorkItem, Comment, Activity, Workflow, WorkflowExecution, WorkflowExecutionStep
+from .models import Project, WorkItem, Comment, Activity, Workflow, WorkflowExecution, WorkflowExecutionStep, UserProfile, ProjectAttachment, ProjectComment
 from .services import record_activity, transition_work_item
 
-class ProjectSerializer(serializers.ModelSerializer):
+class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Project
-        fields = '__all__'
+        model = UserProfile
+        fields = ['bio', 'role', 'avatar_url', 'phone_number']
+
+class ProjectAttachmentSerializer(serializers.ModelSerializer):
+    uploaded_by_name = serializers.ReadOnlyField(source='uploaded_by.username')
+    file_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProjectAttachment
+        fields = ['id', 'project', 'uploaded_by', 'uploaded_by_name', 'file', 'file_url', 'description', 'created_at']
+        read_only_fields = ['uploaded_by', 'created_at']
+
+    def get_file_url(self, obj):
+        request = self.context.get('request')
+        if obj.file and hasattr(obj.file, 'url'):
+            if request is not None:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
+        return None
+
+class ProjectCommentSerializer(serializers.ModelSerializer):
+    author_name = serializers.ReadOnlyField(source='author.username')
+    author_avatar = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProjectComment
+        fields = ['id', 'project', 'author', 'author_name', 'author_avatar', 'message', 'created_at']
+        read_only_fields = ['author', 'created_at']
+
+    def get_author_avatar(self, obj):
+        try:
+            return obj.author.profile.avatar_url
+        except:
+            return None
 
 class UserSerializer(serializers.ModelSerializer):
+    profile = UserProfileSerializer(read_only=True)
+    
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'email']
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'profile']
+
+class ProjectSerializer(serializers.ModelSerializer):
+    members_detail = UserSerializer(source='members', many=True, read_only=True)
+    attachments = ProjectAttachmentSerializer(many=True, read_only=True)
+    comments = ProjectCommentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Project
+        fields = ['id', 'name', 'description', 'project_type', 'tech_tools', 'created_at', 'members', 'members_detail', 'attachments', 'comments']
+
 
 class CommentSerializer(serializers.ModelSerializer):
     author_name = serializers.ReadOnlyField(source='author.username')

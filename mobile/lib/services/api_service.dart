@@ -22,13 +22,19 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  // Use 10.0.2.2 for Android emulator, localhost for Web/Desktop
   static String get baseUrl {
     if (kIsWeb) {
       return 'http://localhost:8000/api';
     }
     // Android emulator alias for localhost
     return 'http://10.0.2.2:8000/api';
+  }
+
+  static String get wsBaseUrl {
+    if (kIsWeb) {
+      return 'ws://localhost:8000/ws';
+    }
+    return 'ws://10.0.2.2:8000/ws';
   }
   
   static final FlutterSecureStorage _storage = const FlutterSecureStorage();

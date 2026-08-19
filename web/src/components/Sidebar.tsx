@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import { LayoutDashboard, ListTodo, Kanban, Activity, Calendar, FileText, Briefcase, Star, Clock, FolderOpen, User, Settings, ChevronLeft, ChevronRight, Network } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useLayout } from '../contexts/LayoutContext'
+import { useAuth } from '../contexts/AuthContext'
 
 const mainNavItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -33,6 +34,7 @@ const projectItems = [
 export function Sidebar() {
   const pathname = usePathname()
   const { isSidebarOpen, toggleSidebar } = useLayout()
+  const { user } = useAuth()
   
   return (
     <div className={cn(
@@ -140,23 +142,31 @@ export function Sidebar() {
       </div>
       
       <div className="shrink-0 p-4 border-t border-gray-200 dark:border-gray-800/50">
-        <div className={cn(
-          "flex items-center rounded-xl bg-gray-50 dark:bg-gray-900/50 p-2 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-colors cursor-pointer",
-          isSidebarOpen ? "justify-between" : "justify-center"
-        )}>
-           <div className="flex items-center gap-3">
-             <div className="h-8 w-8 shrink-0 rounded-full bg-gray-200 dark:bg-gray-900 flex items-center justify-center overflow-hidden">
-                <User className="h-4 w-4 text-gray-500 dark:text-gray-300" />
-             </div>
-             {isSidebarOpen && (
-               <div className="flex flex-col truncate">
-                 <span className="text-sm font-medium text-gray-900 dark:text-white truncate">CJ Hub</span>
-                 <span className="text-xs text-gray-500 truncate">Senior Developer</span>
+        <Link href="/profile">
+          <div className={cn(
+            "flex items-center rounded-xl bg-gray-50 dark:bg-gray-900/50 p-2 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-colors cursor-pointer",
+            isSidebarOpen ? "justify-between" : "justify-center"
+          )}>
+             <div className="flex items-center gap-3">
+               <div className="h-8 w-8 shrink-0 rounded-full bg-gray-200 dark:bg-gray-900 flex items-center justify-center overflow-hidden">
+                 {user?.profile?.avatar_url ? (
+                   <img src={user.profile.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                 ) : (
+                   <User className="h-4 w-4 text-gray-500 dark:text-gray-300" />
+                 )}
                </div>
-             )}
-           </div>
-           {isSidebarOpen && <Settings className="h-4 w-4 shrink-0 text-gray-500" />}
-        </div>
+               {isSidebarOpen && (
+                 <div className="flex flex-col truncate">
+                   <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                     {user ? `${user.first_name || user.username} ${user.last_name || ''}` : 'Guest'}
+                   </span>
+                   <span className="text-xs text-gray-500 truncate">{user?.profile?.role || 'Member'}</span>
+                 </div>
+               )}
+             </div>
+             {isSidebarOpen && <Settings className="h-4 w-4 shrink-0 text-gray-500" />}
+          </div>
+        </Link>
       </div>
     </div>
   )
