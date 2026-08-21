@@ -286,61 +286,76 @@ docker-compose up --build
 
 ## 📡 API Reference
 
+*Note: All local API endpoints are based on the default development server URL: **`http://127.0.0.1:8000`**.*
+
 ### Authentication
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/auth/login/` | Login — returns access + refresh JWT |
-| `POST` | `/api/auth/register/` | Register new user |
-| `POST` | `/api/auth/refresh/` | Refresh access token |
-| `GET/PATCH` | `/api/auth/me/` | Get or update current user profile |
-| `POST` | `/api/auth/change-password/` | Change password |
-| `POST` | `/api/auth/logout/` | Logout and blacklist token |
+**Base Path:** `/api/auth/`
+**Headers Required for Protected Endpoints:** `Authorization: Bearer <access_token>`
+
+| Method | Endpoint | Description | Payload / Response |
+|--------|----------|-------------|--------------------|
+| `POST` | [`/api/auth/login/`](http://127.0.0.1:8000/api/auth/login/) | Login — returns access + refresh JWT | **Req:** `{username, password}`<br>**Res:** `{access, refresh}` |
+| `POST` | [`/api/auth/register/`](http://127.0.0.1:8000/api/auth/register/) | Register new user | **Req:** `{username, email, password, role}` |
+| `POST` | [`/api/auth/refresh/`](http://127.0.0.1:8000/api/auth/refresh/) | Refresh access token | **Req:** `{refresh}`<br>**Res:** `{access}` |
+| `GET/PATCH` | [`/api/auth/me/`](http://127.0.0.1:8000/api/auth/me/) | Get or update current user profile | **Res:** User object |
+| `POST` | [`/api/auth/change-password/`](http://127.0.0.1:8000/api/auth/change-password/) | Change password | **Req:** `{old_password, new_password}` |
+| `POST` | [`/api/auth/logout/`](http://127.0.0.1:8000/api/auth/logout/) | Logout and blacklist token | **Req:** `{refresh}` |
 
 ### Work Items
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/work-items/` | List work items (filterable + paginated) |
-| `POST` | `/api/work-items/` | Create work item |
-| `GET` | `/api/work-items/{id}/` | Get work item detail |
-| `PATCH` | `/api/work-items/{id}/` | Update work item |
-| `POST` | `/api/work-items/{id}/transition/` | Transition status |
-| `POST` | `/api/work-items/{id}/assign/` | Assign to user |
-| `GET/POST` | `/api/work-items/{id}/comments/` | List or add comments |
-| `GET` | `/api/work-items/{id}/activity/` | Get audit log |
+**Headers Required:** `Authorization: Bearer <access_token>`
+
+| Method | Endpoint | Description | Query / Payload |
+|--------|----------|-------------|-----------------|
+| `GET` | [`/api/work-items/`](http://127.0.0.1:8000/api/work-items/) | List work items (filterable + paginated) | **Query:** `?project_id=1&status=OPEN` |
+| `POST` | [`/api/work-items/`](http://127.0.0.1:8000/api/work-items/) | Create work item | **Req:** `{title, description, project, priority, type}` |
+| `GET` | [`/api/work-items/{id}/`](http://127.0.0.1:8000/api/work-items/1/) | Get work item detail | **Res:** WorkItem object with comments & history |
+| `PATCH` | [`/api/work-items/{id}/`](http://127.0.0.1:8000/api/work-items/1/) | Update work item | **Req:** Partial WorkItem object |
+| `POST` | [`/api/work-items/{id}/transition/`](http://127.0.0.1:8000/api/work-items/1/transition/) | Transition status | **Req:** `{status, resolution_note}` |
+| `POST` | [`/api/work-items/{id}/assign/`](http://127.0.0.1:8000/api/work-items/1/assign/) | Assign to user | **Req:** `{user_id}` |
+| `GET/POST` | [`/api/work-items/{id}/comments/`](http://127.0.0.1:8000/api/work-items/1/comments/) | List or add comments | **Req:** `{text}` |
+| `GET` | [`/api/work-items/{id}/activity/`](http://127.0.0.1:8000/api/work-items/1/activity/) | Get audit log | **Res:** List of activities for the item |
 
 ### Projects
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET/POST` | `/api/projects/` | List or create projects |
-| `GET/PATCH` | `/api/projects/{id}/` | Get or update project |
-| `POST` | `/api/projects/{id}/add_member/` | Add team member |
-| `POST` | `/api/projects/{id}/upload_attachment/` | Upload file |
+**Headers Required:** `Authorization: Bearer <access_token>`
+
+| Method | Endpoint | Description | Query / Payload |
+|--------|----------|-------------|-----------------|
+| `GET/POST` | [`/api/projects/`](http://127.0.0.1:8000/api/projects/) | List or create projects | **Req:** `{name, description, type}` |
+| `GET/PATCH` | [`/api/projects/{id}/`](http://127.0.0.1:8000/api/projects/1/) | Get or update project | **Res:** Project object |
+| `POST` | [`/api/projects/{id}/add_member/`](http://127.0.0.1:8000/api/projects/1/add_member/) | Add team member | **Req:** `{user_id, role}` |
+| `POST` | [`/api/projects/{id}/upload_attachment/`](http://127.0.0.1:8000/api/projects/1/upload_attachment/) | Upload file | **Req:** `multipart/form-data` with `file` |
 
 ### Workflows
 
+**Headers Required:** `Authorization: Bearer <access_token>`
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET/POST` | `/api/workflows/` | List or create workflows |
-| `GET/PATCH/DELETE` | `/api/workflows/{id}/` | Manage workflow |
+| `GET/POST` | [`/api/workflows/`](http://127.0.0.1:8000/api/workflows/) | List or create workflows |
+| `GET/PATCH/DELETE` | [`/api/workflows/{id}/`](http://127.0.0.1:8000/api/workflows/1/) | Manage workflow |
 
 ### Dashboard and Metadata
 
+**Headers Required:** `Authorization: Bearer <access_token>`
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/dashboard/` | Dashboard KPI stats |
-| `GET` | `/api/users/` | List all users |
-| `GET` | `/api/metadata/` | Project types and tech tools |
+| `GET` | [`/api/dashboard/`](http://127.0.0.1:8000/api/dashboard/) | Dashboard KPI stats |
+| `GET` | [`/api/users/`](http://127.0.0.1:8000/api/users/) | List all users |
+| `GET` | [`/api/metadata/`](http://127.0.0.1:8000/api/metadata/) | Project types and tech tools |
 
 ### Real-time WebSocket
 
 ```
-ws://localhost:8000/ws/board/{project_id}/
+ws://127.0.0.1:8000/ws/board/{project_id}/
 ```
 
-Events: `item_moved`, `item_created`, `item_updated` — broadcast to all connected clients instantly.
+**Connection:** Requires valid token or session.
+**Events Received:** `item_moved`, `item_created`, `item_updated` — broadcast to all connected clients instantly.
+**Events Sent (Optional):** Move updates if handling drag-and-drop on clients.
 
 ---
 
