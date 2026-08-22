@@ -34,28 +34,6 @@ const COLUMNS: { id: Status; title: string }[] = [
   { id: 'RESOLVED',    title: 'Resolved'    },
 ]
 
-function StatCard({ icon, label, value, color, sub, onClick, isActive }: {
-  icon: React.ReactNode; label: string; value: number; color: string; sub?: string;
-  onClick?: () => void; isActive?: boolean;
-}) {
-  return (
-    <div
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${onClick ? 'cursor-pointer hover:bg-white/5 active:scale-95' : 'cursor-default'} ${isActive ? 'ring-2 ring-red-500/50 bg-red-500/10' : ''}`}
-      style={{ background: isActive ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid rgba(255,255,255,0.06)` }}
-      onClick={onClick}
-    >
-      <div className="p-2 rounded-lg" style={{ background: `${color}15` }}>
-        <span style={{ color }}>{icon}</span>
-      </div>
-      <div>
-        <p className="text-xl font-bold text-white leading-none">{value}</p>
-        <p className="text-[11px] text-gray-400 mt-0.5">{label}</p>
-        {sub && <p className="text-[10px] font-semibold mt-0.5" style={{ color }}>{sub}</p>}
-      </div>
-    </div>
-  )
-}
-
 export function KanbanBoard() {
   const router = useRouter()
   const { data: users = [] } = useUsersQuery()
@@ -76,9 +54,10 @@ export function KanbanBoard() {
   const [createForStatus, setCreateForStatus] = React.useState<Status>('OPEN')
   const [boardSearch, setBoardSearch] = React.useState('')
   const [debouncedSearch, setDebouncedSearch] = React.useState('')
-  const [boardFilter, setBoardFilter] = React.useState<{ assignee?: number; category?: string; priority?: Priority; status?: Status }>({})
+  const [boardFilter, setBoardFilter] = React.useState<{ assigned_to?: number; category?: string; priority?: Priority; status?: Status; project?: number; overdue?: boolean }>({})
   const [isRefreshing, setIsRefreshing] = React.useState(false)
   const [showFilters, setShowFilters] = React.useState(false)
+  const [groupByProject, setGroupByProject] = React.useState(false)
 
   const { data, isLoading, error, refetch } = useWorkItemsQuery({ 
     page_size: 200, 
@@ -90,7 +69,7 @@ export function KanbanBoard() {
   const [isLive, setIsLive] = React.useState(false)
 
   React.useEffect(() => {
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://127.0.0.1:8000/ws/'
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || (typeof window !== 'undefined' ? "ws://" + window.location.hostname + ":8000/ws/" : 'ws://127.0.0.1:8000/ws/')
     const ws = new WebSocket(`${wsUrl}board/`)
     
     ws.onopen = () => setIsLive(true)
@@ -129,8 +108,15 @@ export function KanbanBoard() {
         const q = boardSearch.toLowerCase()
         if (!item.title.toLowerCase().includes(q) && !(item.reference_number ?? '').toLowerCase().includes(q)) return false
       }
-      if (boardFilter.assignee && item.assigned_to !== boardFilter.assignee) return false
+      if (boardFilter.assigned_to && item.assigned_to !== boardFilter.assigned_to) return false
       if (boardFilter.category && item.category !== boardFilter.category) return false
+      if (boardFilter.project && item.project !== boardFilter.project) return false
+      if (boardFilter.overdue) {
+        if (!item.due_date) return false
+        const now = new Date()
+        if (new Date(item.due_date) >= now) return false
+        if (item.status === 'CLOSED' || item.status === 'RESOLVED') return false
+      }
       return true
     })
   }, [allItems, boardSearch, boardFilter])
@@ -186,8 +172,9 @@ export function KanbanBoard() {
     if (!activeItem) return
 
     let targetStatus: Status | null = null
-    if (COLUMNS.some(col => col.id === over.id)) {
-      targetStatus = over.id as Status
+    const overData = over.data.current
+    if (overData && overData.type === 'Column') {
+      targetStatus = overData.status as Status
     } else {
       const overItem = items.find(i => i.id.toString() === over.id)
       if (overItem) targetStatus = overItem.status
@@ -205,7 +192,13 @@ export function KanbanBoard() {
     }
   }
 
-  const getItemsForColumn = (status: Status) => items.filter(i => i.status === status)
+  const getItemsForColumn = (status: Status, projectId?: number) => {
+    let cols = items.filter(i => i.status === status)
+    if (projectId) {
+      cols = cols.filter(i => i.project === projectId)
+    }
+    return cols
+  }
   const activeItem = activeId ? items.find(i => i.id === activeId) : null
 
   if (isLoading) return (
@@ -249,27 +242,7 @@ export function KanbanBoard() {
         </div>
       </div>
 
-      {/* ── Engineering Stats Header ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard 
-          icon={<Activity className="w-4 h-4" />} label="Active Items" value={stats.active} color="#ef4444" 
-          isActive={boardFilter.status === 'OPEN' || boardFilter.status === 'IN_PROGRESS'}
-          onClick={() => setBoardFilter(f => (f.status === 'OPEN' ? {} : { ...f, status: 'OPEN' }))}
-        />
-        <StatCard 
-          icon={<Zap className="w-4 h-4" />} label="Critical" value={stats.critical} color="#ef4444" sub={stats.critical > 0 ? "Needs attention" : undefined} 
-          isActive={boardFilter.priority === 'CRITICAL'}
-          onClick={() => setBoardFilter(f => (f.priority === 'CRITICAL' ? { ...f, priority: undefined } : { ...f, priority: 'CRITICAL' }))}
-        />
-        <StatCard 
-          icon={<Clock className="w-4 h-4" />} label="Overdue" value={stats.overdue} color="#f59e0b" sub={stats.overdue > 0 ? "Past due date" : undefined} 
-        />
-        <StatCard 
-          icon={<AlertTriangle className="w-4 h-4" />} label="In Review" value={stats.inReview} color="#8b5cf6" 
-          isActive={boardFilter.status === 'REVIEW'}
-          onClick={() => setBoardFilter(f => (f.status === 'REVIEW' ? { ...f, status: undefined } : { ...f, status: 'REVIEW' }))}
-        />
-      </div>
+      
 
       {boardError && (
         <FeedbackBanner type="error" message={boardError} onDismiss={() => setBoardError(null)} />
@@ -322,6 +295,20 @@ export function KanbanBoard() {
             <span className="hidden sm:inline">Refresh</span>
           </button>
 
+          {/* Group by Project */}
+          <button
+            onClick={() => setGroupByProject(!groupByProject)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all hidden lg:flex`}
+            style={{
+              background: groupByProject ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)',
+              color: groupByProject ? '#60a5fa' : '#6b7280',
+              border: `1px solid ${groupByProject ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.08)'}`,
+            }}
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            Swimlanes
+          </button>
+
           <div className="h-5 w-px bg-white/10 hidden sm:block" />
 
           {/* Board item count */}
@@ -339,6 +326,33 @@ export function KanbanBoard() {
           >
             <Plus className="w-3.5 h-3.5" /> New Item
           </button>
+          <div className="flex items-center gap-1.5 ml-2 border-l border-white/10 pl-2 hidden lg:flex">
+            <button
+              onClick={() => setBoardFilter(f => (f.status === 'OPEN' ? {} : { ...f, status: 'OPEN' }))}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${boardFilter.status === "OPEN" || boardFilter.status === "IN_PROGRESS" ? "bg-red-500/10 text-red-400 ring-1 ring-red-500/50" : "bg-white/5 text-gray-400 hover:bg-white/10"}`}
+            >
+              <Activity className="w-3 h-3" /> Active {stats.active}
+            </button>
+            <button
+              onClick={() => setBoardFilter(f => (f.priority === 'CRITICAL' ? { ...f, priority: undefined } : { ...f, priority: 'CRITICAL' }))}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${boardFilter.priority === "CRITICAL" ? "bg-red-500/10 text-red-400 ring-1 ring-red-500/50" : "bg-white/5 text-gray-400 hover:bg-white/10"}`}
+            >
+              <Zap className="w-3 h-3" /> Critical {stats.critical}
+            </button>
+            <button
+              onClick={() => setBoardFilter(f => (f.overdue ? { ...f, overdue: undefined } : { ...f, overdue: true }))}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${boardFilter.overdue ? "bg-orange-500/10 text-orange-400 ring-1 ring-orange-500/50" : "bg-white/5 text-gray-400 hover:bg-white/10"}`}
+            >
+              <Clock className="w-3 h-3" /> Overdue {stats.overdue}
+            </button>
+            <button
+              onClick={() => setBoardFilter(f => (f.status === 'REVIEW' ? { ...f, status: undefined } : { ...f, status: 'REVIEW' }))}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${boardFilter.status === "REVIEW" ? "bg-purple-500/10 text-purple-400 ring-1 ring-purple-500/50" : "bg-white/5 text-gray-400 hover:bg-white/10"}`}
+            >
+              <AlertTriangle className="w-3 h-3" /> Review {stats.inReview}
+            </button>
+          </div>
+
         </div>
       </div>
 
@@ -353,11 +367,24 @@ export function KanbanBoard() {
             <Users className="w-3.5 h-3.5 text-gray-500" />
             <select
               className="text-xs bg-white/5 text-gray-300 border border-white/10 rounded-lg px-2 py-1.5 focus:outline-none focus:border-red-500/60"
-              value={boardFilter.assignee ?? ''}
-              onChange={e => setBoardFilter(f => ({ ...f, assignee: e.target.value ? parseInt(e.target.value) : undefined }))}
+              value={boardFilter.assigned_to ?? ''}
+              onChange={e => setBoardFilter(f => ({ ...f, assigned_to: e.target.value ? parseInt(e.target.value) : undefined }))}
             >
               <option value="">All Assignees</option>
               {(users as User[]).map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
+            </select>
+          </div>
+
+          {/* Project filter */}
+          <div className="flex items-center gap-2">
+            <LayoutGrid className="w-3.5 h-3.5 text-gray-500" />
+            <select
+              className="text-xs bg-white/5 text-gray-300 border border-white/10 rounded-lg px-2 py-1.5 focus:outline-none focus:border-red-500/60"
+              value={boardFilter.project ?? ''}
+              onChange={e => setBoardFilter(f => ({ ...f, project: e.target.value ? parseInt(e.target.value) : undefined }))}
+            >
+              <option value="">All Projects</option>
+              {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </div>
 
@@ -413,25 +440,63 @@ export function KanbanBoard() {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-6 pt-1 -mx-1 px-1 snap-x md:snap-none" style={{ minHeight: '520px' }}>
-          {COLUMNS.map(col => (
-            <div
-              key={col.id}
-              className={`w-full shrink-0 snap-center ${activeMobileColumn === col.id ? 'block' : 'hidden md:flex'}`}
-            >
-              <KanbanColumn
-                id={col.id}
-                title={col.title}
-                items={getItemsForColumn(col.id)}
-                users={users as User[]}
-                mutatingItemId={mutatingItemId ?? undefined}
-                onPreview={setPreviewId}
-                onEdit={setEditingItem}
-                onChat={handleChat}
-                onAddItem={handleAddItem}
-              />
+        <div className="flex flex-col gap-8 pb-6 pt-1">
+          {groupByProject ? (
+            projects.filter(p => items.some(i => i.project === p.id)).map(project => (
+              <div key={project.id} className="flex flex-col gap-4">
+                <div className="flex items-center gap-2 px-1 text-white font-bold text-lg">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
+                    <LayoutGrid size={16} />
+                  </div>
+                  {project.name}
+                  <span className="text-gray-500 text-sm font-normal ml-2">{items.filter(i => i.project === project.id).length} items</span>
+                </div>
+                <div className="flex gap-4 overflow-x-auto -mx-1 px-1 snap-x md:snap-none pb-2">
+                  {COLUMNS.map(col => (
+                    <div
+                      key={col.id}
+                      className={`w-full shrink-0 snap-center ${activeMobileColumn === col.id ? 'block' : 'hidden md:flex'}`}
+                    >
+                      <KanbanColumn
+                        id={`${project.id}-${col.id}` as any}
+                        title={col.title}
+                        items={getItemsForColumn(col.id, project.id)}
+                        users={users as User[]}
+                        projects={projects}
+                        mutatingItemId={mutatingItemId ?? undefined}
+                        onPreview={setPreviewId}
+                        onEdit={setEditingItem}
+                        onChat={handleChat}
+                        onAddItem={handleAddItem}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 snap-x md:snap-none" style={{ minHeight: '520px' }}>
+              {COLUMNS.map(col => (
+                <div
+                  key={col.id}
+                  className={`w-full shrink-0 snap-center ${activeMobileColumn === col.id ? 'block' : 'hidden md:flex'}`}
+                >
+                  <KanbanColumn
+                    id={col.id}
+                    title={col.title}
+                    items={getItemsForColumn(col.id)}
+                    users={users as User[]}
+                    projects={projects}
+                    mutatingItemId={mutatingItemId ?? undefined}
+                    onPreview={setPreviewId}
+                    onEdit={setEditingItem}
+                    onChat={handleChat}
+                    onAddItem={handleAddItem}
+                  />
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
 
         <DragOverlay dropAnimation={{ sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.4' } } }) }}>
@@ -439,6 +504,7 @@ export function KanbanBoard() {
             <KanbanCard
               item={activeItem}
               users={users as User[]}
+              projects={projects}
               onPreview={() => {}}
               onEdit={() => {}}
               onChat={() => {}}
