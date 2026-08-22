@@ -54,7 +54,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = ['id', 'name', 'description', 'project_type', 'tech_tools', 'created_at', 'members', 'members_detail', 'attachments', 'comments']
+        fields = ['id', 'name', 'description', 'project_type', 'status', 'tech_tools', 'created_at', 'members', 'members_detail', 'attachments', 'comments']
 
 
 class CommentSerializer(serializers.ModelSerializer):

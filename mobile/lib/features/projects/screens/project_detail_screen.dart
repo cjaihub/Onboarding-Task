@@ -98,7 +98,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
             Text('Project Info', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             Card(
-              color: UsalamaTheme.cardBackground,
+              color: Theme.of(context).cardColor,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -223,7 +223,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
       itemBuilder: (context, index) {
         final attachment = _project!.attachments[index];
         return Card(
-          color: UsalamaTheme.cardBackground,
+          color: Theme.of(context).cardColor,
           margin: const EdgeInsets.only(bottom: 12.0),
           child: ListTile(
             leading: const Icon(Icons.attach_file, color: UsalamaTheme.primaryRed),
@@ -279,7 +279,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
                                 Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: UsalamaTheme.cardBackground,
+                                    color: Theme.of(context).cardColor,
                                     borderRadius: const BorderRadius.only(
                                       topRight: Radius.circular(12),
                                       bottomLeft: Radius.circular(12),
@@ -300,7 +300,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           decoration: BoxDecoration(
-            color: UsalamaTheme.cardBackground,
+            color: Theme.of(context).cardColor,
             border: Border(top: BorderSide(color: Colors.grey.shade800)),
           ),
           child: SafeArea(
@@ -348,7 +348,29 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_project!.name),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(_project!.name),
+            Container(
+              margin: const EdgeInsets.top(4),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: _getStatusColor(_project!.status).withOpacity(0.15),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: _getStatusColor(_project!.status).withOpacity(0.3)),
+              ),
+              child: Text(
+                _project!.status.replaceAll('_', ' '),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: _getStatusColor(_project!.status),
+                ),
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(icon: const Icon(Icons.edit), onPressed: () {}),
         ],
@@ -374,4 +396,20 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
       ),
     );
   }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'PLANNING':
+        return Colors.blue;
+      case 'ACTIVE':
+        return Colors.green;
+      case 'ON_HOLD':
+        return Colors.amber;
+      case 'COMPLETED':
+        return Colors.purple;
+      default:
+        return Colors.blue;
+    }
+  }
 }
+

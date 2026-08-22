@@ -20,7 +20,8 @@ def create_user_profile(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
-    instance.profile.save()
+    if hasattr(instance, 'profile'):
+        instance.profile.save()
 
 class Project(models.Model):
     PROJECT_TYPES = [
@@ -33,9 +34,17 @@ class Project(models.Model):
         ('INFRA', 'Infrastructure / DevOps'),
     ]
 
+    PROJECT_STATUS_CHOICES = [
+        ('PLANNING', 'Planning'),
+        ('ACTIVE', 'Active'),
+        ('ON_HOLD', 'On Hold'),
+        ('COMPLETED', 'Completed'),
+    ]
+
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     project_type = models.CharField(max_length=50, choices=PROJECT_TYPES, default='FULLSTACK')
+    status = models.CharField(max_length=20, choices=PROJECT_STATUS_CHOICES, default='PLANNING')
     tech_tools = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     members = models.ManyToManyField(User, related_name='projects', blank=True)

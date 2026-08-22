@@ -81,6 +81,23 @@ class ProjectCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: _getStatusColor(project.status).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: _getStatusColor(project.status).withOpacity(0.3)),
+                              ),
+                              child: Text(
+                                project.status.replaceAll('_', ' '),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: _getStatusColor(project.status),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
                             Text(
                               '$workItemCount tasks',
                               style: const TextStyle(
@@ -160,4 +177,20 @@ class ProjectCard extends StatelessWidget {
       ),
     );
   }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'PLANNING':
+        return Colors.blue;
+      case 'ACTIVE':
+        return Colors.green;
+      case 'ON_HOLD':
+        return Colors.amber;
+      case 'COMPLETED':
+        return Colors.purple;
+      default:
+        return Colors.blue;
+    }
+  }
 }
+

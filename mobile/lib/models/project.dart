@@ -69,6 +69,7 @@ class Project {
   final String name;
   final String? description;
   final String projectType;
+  final String status;
   final List<String> techTools;
   final DateTime? createdAt;
   final List<int> members;
@@ -81,6 +82,7 @@ class Project {
     required this.name,
     this.description,
     required this.projectType,
+    required this.status,
     required this.techTools,
     this.createdAt,
     required this.members,
@@ -95,6 +97,7 @@ class Project {
       name: json['name'] ?? 'Unknown Project',
       description: json['description'],
       projectType: json['project_type'] ?? 'FULLSTACK',
+      status: json['status'] ?? 'PLANNING',
       techTools: (json['tech_tools'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
       members: (json['members'] as List<dynamic>?)?.map((e) => e as int).toList() ?? [],

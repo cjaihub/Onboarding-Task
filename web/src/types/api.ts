@@ -43,6 +43,7 @@ export interface Project {
   name: string;
   description: string;
   project_type: string;
+  status?: 'PLANNING' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED';
   tech_tools: string[];
   created_at: string;
   members?: number[];
