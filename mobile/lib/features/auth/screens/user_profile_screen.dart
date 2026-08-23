@@ -1,43 +1,80 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme.dart';
 import '../models/user.dart';
+import '../../../main.dart';
+import '../providers/auth_provider.dart';
 
-/// Shows a read-only profile for any team member.
-/// Pass a [User] object fetched from the projects `members_detail` field.
-class UserProfileScreen extends StatelessWidget {
+class UserProfileScreen extends ConsumerStatefulWidget {
   final User member;
 
   const UserProfileScreen({Key? key, required this.member}) : super(key: key);
 
-  String get _displayName => member.fullName.isNotEmpty ? member.fullName : member.username;
+  @override
+  ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
+}
+
+class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
+  bool get _isCurrentUser {
+    final currentUser = ref.watch(authProvider).user;
+    return currentUser?.id == widget.member.id;
+  }
+
+  User get _displayUser {
+    if (_isCurrentUser) {
+      return ref.watch(authProvider).user ?? widget.member;
+    }
+    return widget.member;
+  }
+
+  String get _displayName => _displayUser.fullName.isNotEmpty ? _displayUser.fullName : _displayUser.username;
 
   String get _initials {
-    if (member.firstName.isNotEmpty && member.lastName.isNotEmpty) {
-      return '${member.firstName[0]}${member.lastName[0]}'.toUpperCase();
+    if (_displayUser.firstName.isNotEmpty && _displayUser.lastName.isNotEmpty) {
+      return '${_displayUser.firstName[0]}${_displayUser.lastName[0]}'.toUpperCase();
     }
-    final u = member.username;
+    final u = _displayUser.username;
     return u.substring(0, u.length >= 2 ? 2 : 1).toUpperCase();
   }
 
-  Widget _infoTile(IconData icon, String label, String value, Color color) {
+  void _showEditProfileModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) {
+        return _EditProfileForm(user: _displayUser);
+      },
+    );
+  }
+
+  Widget _infoTile(BuildContext context, IconData icon, String label, String value, Color color) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: UsalamaTheme.cardBackground,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          )
+        ],
       ),
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(8),
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: color, size: 18),
+            child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -45,17 +82,18 @@ class UserProfileScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 10,
-                        color: Colors.white54,
-                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                        fontWeight: 
+                        FontWeight.w700,
                         letterSpacing: 0.8)),
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
                 Text(value,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500)),
+                    style: TextStyle(
+                        fontSize: 15,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600)),
               ],
             ),
           ),
@@ -66,17 +104,24 @@ class UserProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final profile = member.profile;
+    final profile = _displayUser.profile;
 
     return Scaffold(
-      backgroundColor: UsalamaTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           // ── Hero App Bar ──────────────────────────────────────────────────
           SliverAppBar(
-            expandedHeight: 230,
+            expandedHeight: 250,
             pinned: true,
-            backgroundColor: UsalamaTheme.cardBackground,
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            actions: [
+              if (_isCurrentUser)
+                IconButton(
+                  icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.onSurface),
+                  onPressed: _showEditProfileModal,
+                ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: BoxDecoration(
@@ -84,8 +129,8 @@ class UserProfileScreen extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      UsalamaTheme.primaryRed.withOpacity(0.55),
-                      UsalamaTheme.cardBackground,
+                      UsalamaTheme.primaryRed.withValues(alpha: 0.15),
+                      Theme.of(context).colorScheme.surface,
                     ],
                   ),
                 ),
@@ -97,35 +142,35 @@ class UserProfileScreen extends StatelessWidget {
                       // Avatar
                       profile?.avatarUrl.isNotEmpty == true
                           ? CircleAvatar(
-                              radius: 44,
+                              radius: 46,
                               backgroundImage: NetworkImage(profile!.avatarUrl),
                             )
                           : CircleAvatar(
-                              radius: 44,
-                              backgroundColor: UsalamaTheme.primaryRed.withOpacity(0.22),
+                              radius: 46,
+                              backgroundColor: UsalamaTheme.primaryRed.withValues(alpha: 0.2),
                               child: Text(
                                 _initials,
                                 style: const TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.w900,
                                   color: UsalamaTheme.primaryRed,
                                 ),
                               ),
                             ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                       Text(_displayName,
-                          style: const TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                          style: TextStyle(
+                              fontSize: 22, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface)),
                       const SizedBox(height: 4),
-                      Text('@${member.username}',
-                          style: const TextStyle(fontSize: 13, color: Colors.white54)),
+                      Text('@${_displayUser.username}',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
                     ],
                   ),
                 ),
               ),
             ),
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+              icon: Icon(Icons.arrow_back_ios_new, size: 18, color: Theme.of(context).colorScheme.onSurface),
               onPressed: () => Navigator.of(context).pop(),
             ),
           ),
@@ -139,41 +184,39 @@ class UserProfileScreen extends StatelessWidget {
                 children: [
                   Text('Profile Details',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold, color: Colors.white70)),
+                          fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
                   const SizedBox(height: 16),
 
                   if (profile?.role.isNotEmpty == true)
-                    _infoTile(Icons.work_outline, 'ROLE', profile!.role,
-                        UsalamaTheme.primaryRed),
+                    _infoTile(context, Icons.work_outline, 'ROLE', profile!.role, UsalamaTheme.primaryRed),
 
-                  if (member.email.isNotEmpty)
-                    _infoTile(Icons.email_outlined, 'EMAIL', member.email, Colors.blue),
+                  if (_displayUser.email.isNotEmpty)
+                    _infoTile(context, Icons.email_outlined, 'EMAIL', _displayUser.email, UsalamaTheme.primaryRed),
 
                   if (profile?.phoneNumber.isNotEmpty == true)
-                    _infoTile(Icons.phone_outlined, 'PHONE', profile!.phoneNumber,
-                        Colors.green),
+                    _infoTile(context, Icons.phone_outlined, 'PHONE', profile!.phoneNumber, Colors.green),
 
                   if (profile?.bio.isNotEmpty == true) ...[
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: UsalamaTheme.cardBackground,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withOpacity(0.06)),
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('BIO',
+                          Text('BIO',
                               style: TextStyle(
                                   fontSize: 10,
-                                  color: Colors.white54,
-                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                                  fontWeight: FontWeight.w700,
                                   letterSpacing: 0.8)),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
                           Text(profile!.bio,
-                              style: const TextStyle(
-                                  fontSize: 14, color: Colors.white70, height: 1.5)),
+                              style: TextStyle(
+                                  fontSize: 15, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8), height: 1.5)),
                         ],
                       ),
                     ),
@@ -184,19 +227,202 @@ class UserProfileScreen extends StatelessWidget {
                       (profile.role.isEmpty &&
                           profile.bio.isEmpty &&
                           profile.phoneNumber.isEmpty &&
-                          member.email.isEmpty))
+                          _displayUser.email.isEmpty))
                     Center(
                       child: Padding(
-                        padding: const EdgeInsets.only(top: 24.0),
+                        padding: const EdgeInsets.only(top: 32.0),
                         child: Text('No additional profile information available.',
-                            style: const TextStyle(color: Colors.white38, fontSize: 13)),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 14)),
                       ),
                     ),
+
+                  if (_isCurrentUser) ...[
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+                          foregroundColor: Theme.of(context).colorScheme.error,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        onPressed: () async {
+                          await ref.read(authProvider.notifier).logout();
+                          if (context.mounted) {
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(builder: (_) => const AuthWrapper()),
+                              (route) => false,
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.logout),
+                        label: const Text('Log Out', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _EditProfileForm extends ConsumerStatefulWidget {
+  final User user;
+  const _EditProfileForm({required this.user});
+
+  @override
+  ConsumerState<_EditProfileForm> createState() => _EditProfileFormState();
+}
+
+class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _firstNameCtrl;
+  late TextEditingController _lastNameCtrl;
+  late TextEditingController _emailCtrl;
+  late TextEditingController _roleCtrl;
+  late TextEditingController _phoneCtrl;
+  late TextEditingController _bioCtrl;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _firstNameCtrl = TextEditingController(text: widget.user.firstName);
+    _lastNameCtrl = TextEditingController(text: widget.user.lastName);
+    _emailCtrl = TextEditingController(text: widget.user.email);
+    _roleCtrl = TextEditingController(text: widget.user.profile?.role ?? '');
+    _phoneCtrl = TextEditingController(text: widget.user.profile?.phoneNumber ?? '');
+    _bioCtrl = TextEditingController(text: widget.user.profile?.bio ?? '');
+  }
+
+  @override
+  void dispose() {
+    _firstNameCtrl.dispose();
+    _lastNameCtrl.dispose();
+    _emailCtrl.dispose();
+    _roleCtrl.dispose();
+    _phoneCtrl.dispose();
+    _bioCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+    
+    final data = {
+      'first_name': _firstNameCtrl.text.trim(),
+      'last_name': _lastNameCtrl.text.trim(),
+      'email': _emailCtrl.text.trim(),
+      'profile': {
+        'role': _roleCtrl.text.trim(),
+        'phone_number': _phoneCtrl.text.trim(),
+        'bio': _bioCtrl.text.trim(),
+      }
+    };
+
+    try {
+      await ref.read(authProvider.notifier).updateProfile(data);
+      if (mounted) {
+        Navigator.pop(context); // Close modal
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update profile: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: 24,
+        right: 24,
+        top: 24,
+      ),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Edit Profile', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface)),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(child: _buildTextField('First Name', _firstNameCtrl)),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildTextField('Last Name', _lastNameCtrl)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildTextField('Email', _emailCtrl, keyboardType: TextInputType.emailAddress),
+              const SizedBox(height: 16),
+              _buildTextField('Role', _roleCtrl),
+              const SizedBox(height: 16),
+              _buildTextField('Phone Number', _phoneCtrl, keyboardType: TextInputType.phone),
+              const SizedBox(height: 16),
+              _buildTextField('Bio', _bioCtrl, maxLines: 3),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: UsalamaTheme.primaryRed,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: _isSaving ? null : _save,
+                  child: _isSaving 
+                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Text('Save Changes', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller, {int maxLines = 1, TextInputType? keyboardType}) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
+        filled: true,
+        fillColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.03),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: UsalamaTheme.primaryRed),
+        ),
       ),
     );
   }

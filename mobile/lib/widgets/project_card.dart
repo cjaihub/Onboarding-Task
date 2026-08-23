@@ -21,10 +21,10 @@ class ProjectCard extends StatelessWidget {
       shadowColor: Colors.black45,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.white.withOpacity(0.05)),
+        side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
       ),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: const Color(0xFF161B24), // Surface raised
+      color: Theme.of(context).colorScheme.surface, // Uses app theme surface color
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
@@ -56,10 +56,10 @@ class ProjectCard extends StatelessWidget {
                       children: [
                         Text(
                           project.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -68,15 +68,15 @@ class ProjectCard extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 project.projectType,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white70,
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                                 ),
                               ),
                             ),
@@ -100,9 +100,9 @@ class ProjectCard extends StatelessWidget {
                             const SizedBox(width: 8),
                             Text(
                               '$workItemCount tasks',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.white54,
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
                               ),
                             ),
                           ],
@@ -110,7 +110,7 @@ class ProjectCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: Colors.white30),
+                  Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
                 ],
               ),
               if (project.description != null && project.description!.isNotEmpty) ...[
@@ -119,7 +119,7 @@ class ProjectCard extends StatelessWidget {
                   project.description!,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white70, height: 1.4),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), height: 1.4),
                 ),
               ],
               const SizedBox(height: 16),
@@ -129,7 +129,7 @@ class ProjectCard extends StatelessWidget {
                   const Spacer(),
                   Text(
                     'Created ${project.createdAt != null ? project.createdAt.toString().split(' ')[0] : 'N/A'}',
-                    style: const TextStyle(fontSize: 11, color: Colors.white38),
+                    style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)),
                   )
                 ],
               )
@@ -142,7 +142,7 @@ class ProjectCard extends StatelessWidget {
 
   Widget _buildMemberAvatars(List<int> members) {
     if (members.isEmpty) {
-      return const Text('No members', style: TextStyle(fontSize: 12, color: Colors.white38));
+      return const Text('No members', style: TextStyle(fontSize: 12, color: Colors.grey));
     }
     return SizedBox(
       height: 32,
@@ -154,7 +154,7 @@ class ProjectCard extends StatelessWidget {
               widthFactor: 0.7,
               child: CircleAvatar(
                 radius: 16,
-                backgroundColor: const Color(0xFF2C323E),
+                backgroundColor: Colors.grey.shade800,
                 child: Text(
                   'U${members[i]}',
                   style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
@@ -180,8 +180,8 @@ class ProjectCard extends StatelessWidget {
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'PLANNING':
-        return Colors.blue;
+      case 'IN_PROGRESS':
+        return Colors.orange;
       case 'ACTIVE':
         return Colors.green;
       case 'ON_HOLD':
@@ -189,7 +189,7 @@ class ProjectCard extends StatelessWidget {
       case 'COMPLETED':
         return Colors.purple;
       default:
-        return Colors.blue;
+        return Colors.grey;
     }
   }
 }

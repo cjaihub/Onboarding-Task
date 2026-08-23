@@ -61,8 +61,8 @@ class _WorkflowsScreenState extends State<WorkflowsScreen> {
     }
     
     if (_workflows == null || _workflows!.isEmpty) {
-      return const Center(
-        child: Text('No workflows found.', style: TextStyle(color: Colors.white54)),
+      return Center(
+        child: Text('No workflows found.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54))),
       );
     }
 
@@ -75,23 +75,23 @@ class _WorkflowsScreenState extends State<WorkflowsScreen> {
         itemBuilder: (context, index) {
           final wf = _workflows![index];
           return Card(
-            color: UsalamaTheme.surfaceDark,
+            color: Theme.of(context).colorScheme.surface,
             margin: const EdgeInsets.only(bottom: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: Colors.white.withOpacity(0.05)),
+              side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05)),
             ),
             child: ListTile(
               contentPadding: const EdgeInsets.all(16),
               title: Text(
                 wf.name,
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
               ),
               subtitle: Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
                   wf.description,
-                  style: const TextStyle(color: Colors.white70),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                 ),
               ),
               trailing: Chip(

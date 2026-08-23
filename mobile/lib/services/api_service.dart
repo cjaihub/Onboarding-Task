@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -22,6 +23,8 @@ class ApiException implements Exception {
 }
 
 class ApiService {
+  static void Function()? onUnauthenticated;
+  
   static String get baseUrl {
     if (kIsWeb) {
       return 'http://localhost:8000/api';
@@ -40,7 +43,10 @@ class ApiService {
   static final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   Future<Map<String, String>> _getHeaders() async {
-    final headers = {'Content-Type': 'application/json'};
+    final headers = {
+      'Content-Type': 'application/json',
+      'Connection': 'close', // Prevents connection reset by peer with dev server
+    };
     final token = await _storage.read(key: 'access_token');
     if (token != null) {
       headers['Authorization'] = 'Bearer $token';
@@ -71,33 +77,110 @@ class ApiService {
     }
   }
 
-  Future<dynamic> get(String endpoint) async {
-    try {
-      final headers = await _getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl$endpoint'), headers: headers).timeout(const Duration(seconds: 10));
-      return _handleResponse(response);
-    } on SocketException {
-      throw Exception('Network failure. Please check your connection.');
-    } catch (e) {
-      if (e is ApiException) rethrow;
-      throw Exception('Failed to communicate with server: $e');
+  Future<dynamic> _requestWithRetry(Future<http.Response> Function() requestFn) async {
+    int maxRetries = 3;
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        http.Response response = await requestFn();
+        
+        if (response.statusCode == 401) {
+          // Attempt token refresh
+          final refreshToken = await _storage.read(key: 'refresh_token');
+          if (refreshToken != null) {
+            final refreshResponse = await http.post(
+              Uri.parse('$baseUrl/auth/refresh/'),
+              headers: {'Content-Type': 'application/json'},
+              body: json.encode({'refresh': refreshToken}),
+            );
+            
+            if (refreshResponse.statusCode == 200) {
+              final data = json.decode(refreshResponse.body);
+              await _storage.write(key: 'access_token', value: data['access']);
+              if (data.containsKey('refresh')) {
+                await _storage.write(key: 'refresh_token', value: data['refresh']);
+              }
+              // Retry the original request
+              response = await requestFn();
+            } else {
+              await _storage.delete(key: 'access_token');
+              await _storage.delete(key: 'refresh_token');
+              onUnauthenticated?.call();
+              throw ApiException(401, 'Session expired. Please log in again.');
+            }
+          } else {
+            await _storage.delete(key: 'access_token');
+            await _storage.delete(key: 'refresh_token');
+            onUnauthenticated?.call();
+            throw ApiException(401, 'Session expired. Please log in again.');
+          }
+        }
+        
+        return _handleResponse(response);
+      } on SocketException {
+        if (attempt == maxRetries) throw Exception('Network failure. Please check your connection to the server.');
+        await Future.delayed(Duration(milliseconds: 500 * attempt));
+      } on TimeoutException {
+        if (attempt == maxRetries) throw Exception('Request timed out. The server is taking too long to respond.');
+        await Future.delayed(Duration(milliseconds: 500 * attempt));
+      } on http.ClientException catch (e) {
+        if (attempt == maxRetries) throw Exception('Client error: ${e.message}. Are you sure the backend is running?');
+        await Future.delayed(Duration(milliseconds: 500 * attempt));
+      } on FormatException catch (e) {
+        throw Exception('Invalid data received from server. Expected JSON but got something else.');
+      } catch (e, stack) {
+        if (e is ApiException) rethrow;
+        debugPrint('API Service Error: $e\n$stack');
+        throw Exception('Failed to communicate with server: $e');
+      }
     }
+    throw Exception('Failed to communicate with server after multiple attempts.');
+  }
+
+  Future<dynamic> get(String endpoint) async {
+    return _requestWithRetry(() async {
+      final headers = await _getHeaders();
+      return await http.get(Uri.parse('$baseUrl$endpoint'), headers: headers).timeout(const Duration(seconds: 10));
+    });
   }
 
   Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
-    try {
+    return _requestWithRetry(() async {
       final headers = await _getHeaders();
-      final response = await http.post(
+      return await http.post(
         Uri.parse('$baseUrl$endpoint'),
         headers: headers,
         body: json.encode(body),
       ).timeout(const Duration(seconds: 10));
-      return _handleResponse(response);
-    } on SocketException {
-      throw Exception('Network failure. Please check your connection.');
-    } catch (e) {
-      if (e is ApiException) rethrow;
-      throw Exception('Failed to communicate with server: $e');
-    }
+    });
+  }
+
+  Future<dynamic> patch(String endpoint, Map<String, dynamic> body) async {
+    return _requestWithRetry(() async {
+      final headers = await _getHeaders();
+      return await http.patch(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: headers,
+        body: json.encode(body),
+      ).timeout(const Duration(seconds: 10));
+    });
+  }
+
+  Future<dynamic> uploadFile(String endpoint, Map<String, String> fields, {String? filePath, List<int>? fileBytes, String? fileName, String fileField = 'file'}) async {
+    return _requestWithRetry(() async {
+      final headers = await _getHeaders();
+      final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$endpoint'));
+      
+      request.headers.addAll(headers);
+      request.fields.addAll(fields);
+      
+      if (filePath != null) {
+        request.files.add(await http.MultipartFile.fromPath(fileField, filePath));
+      } else if (fileBytes != null && fileName != null) {
+        request.files.add(http.MultipartFile.fromBytes(fileField, fileBytes, filename: fileName));
+      }
+
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
+      return await http.Response.fromStream(streamedResponse);
+    });
   }
 }

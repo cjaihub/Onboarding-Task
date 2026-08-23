@@ -62,8 +62,8 @@ class AppDrawer extends ConsumerWidget {
             )
           else
             ListTile(
-              leading: const Icon(Icons.login, color: Colors.blue),
-              title: const Text('Login', style: TextStyle(color: Colors.blue)),
+              leading: const Icon(Icons.login, color: UsalamaTheme.primaryRed),
+              title: const Text('Login', style: TextStyle(color: UsalamaTheme.primaryRed)),
               onTap: () {
                 Navigator.pop(context); // close drawer
                 Navigator.push(

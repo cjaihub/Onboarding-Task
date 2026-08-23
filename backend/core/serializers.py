@@ -51,11 +51,22 @@ class ProjectSerializer(serializers.ModelSerializer):
     members_detail = UserSerializer(source='members', many=True, read_only=True)
     attachments = ProjectAttachmentSerializer(many=True, read_only=True)
     comments = ProjectCommentSerializer(many=True, read_only=True)
+    task_count = serializers.SerializerMethodField()
+    progress = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
-        fields = ['id', 'name', 'description', 'project_type', 'status', 'tech_tools', 'created_at', 'members', 'members_detail', 'attachments', 'comments']
+        fields = ['id', 'name', 'description', 'project_type', 'status', 'tech_tools', 'created_at', 'members', 'members_detail', 'attachments', 'comments', 'task_count', 'progress']
 
+    def get_task_count(self, obj):
+        return obj.work_items.count()
+
+    def get_progress(self, obj):
+        total_tasks = obj.work_items.count()
+        if total_tasks == 0:
+            return 0
+        completed_tasks = obj.work_items.filter(status__in=['RESOLVED', 'CLOSED']).count()
+        return int((completed_tasks / total_tasks) * 100)
 
 class CommentSerializer(serializers.ModelSerializer):
     author_name = serializers.ReadOnlyField(source='author.username')

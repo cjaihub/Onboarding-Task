@@ -32,6 +32,16 @@ USALAMA is a production-ready engineering operations platform that enables teams
 - **Collaborate in real-time** via WebSocket-powered Kanban boards
 - **Monitor health** via a live dashboard with KPI metrics, overdue tracking, and activity feeds
 - **Work anywhere** with a full-featured Flutter mobile app for iOS and Android
+- **Chat & Connect** instantly via an enhanced, premium dark-mode team communication interface
+
+---
+
+## 🎯 App Use Cases
+
+1. **Agile Engineering Teams**: Manage sprints, track bugs, and move tickets across a real-time Kanban board while instantly seeing updates from colleagues.
+2. **Operations & QA**: Create workflows to ensure code goes through strict QA checkpoints. Monitor overdue tasks on the dashboard.
+3. **Remote Collaboration**: Project Managers and Engineers can leave notes, attach screenshots or log files, and chat on project pages, securely syncing across web and mobile.
+4. **On-the-go Issue Resolution**: Engineers can receive notifications on their mobile devices, review work items, update statuses, and leave resolution notes using the Flutter app.
 
 ---
 
@@ -106,6 +116,8 @@ USALAMA is a production-ready engineering operations platform that enables teams
 - Kanban board with real-time WebSocket sync
 - Workflow management per project
 - User profile management
+- **Premium Dark Mode UI**: A cohesive, ultra-modern slate-black interface (`#080A0F`) built for focus and low eye strain.
+- **Chat & Connect**: An elevated, glassmorphic modal for seamless team messaging without permission friction.
 
 ---
 
@@ -286,7 +298,47 @@ docker-compose up --build
 
 ## 📡 API Reference
 
-*Note: All local API endpoints are based on the default development server URL: **`http://127.0.0.1:8000`**.*
+### 🔗 Quick Access Links (Local Development)
+
+When running the project locally (via Docker or manual setup), you can use the following easy-to-click links to access the apps and test the `GET` API endpoints directly in your browser. 
+
+**Main Applications:**
+- **Web Dashboard (Frontend):** [http://localhost:3000](http://localhost:3000)
+- **Django Admin Panel:** [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/)
+
+**Easy-to-Click API Endpoints (`GET` requests):**
+*Note: The frontend runs a proxy, so you can access the API either directly via the backend (`127.0.0.1:8000`) or through the frontend proxy (`localhost:3000`). Accessing via the frontend proxy might bypass CORS in local development.*
+
+- **Dashboard Stats:** 
+  - Backend: [`http://127.0.0.1:8000/api/dashboard/`](http://127.0.0.1:8000/api/dashboard/)
+  - Frontend Proxy: [`http://localhost:3000/api/dashboard/`](http://localhost:3000/api/dashboard/)
+- **Users List:** 
+  - Backend: [`http://127.0.0.1:8000/api/users/`](http://127.0.0.1:8000/api/users/)
+  - Frontend Proxy: [`http://localhost:3000/api/users/`](http://localhost:3000/api/users/)
+- **Metadata (Project types & tools):** 
+  - Backend: [`http://127.0.0.1:8000/api/metadata/`](http://127.0.0.1:8000/api/metadata/)
+  - Frontend Proxy: [`http://localhost:3000/api/metadata/`](http://localhost:3000/api/metadata/)
+- **Projects List:** 
+  - Backend: [`http://127.0.0.1:8000/api/projects/`](http://127.0.0.1:8000/api/projects/)
+  - Frontend Proxy: [`http://localhost:3000/api/projects/`](http://localhost:3000/api/projects/)
+- **Work Items List:** 
+  - Backend: [`http://127.0.0.1:8000/api/work-items/`](http://127.0.0.1:8000/api/work-items/)
+  - Frontend Proxy: [`http://localhost:3000/api/work-items/`](http://localhost:3000/api/work-items/)
+- **Workflows List:** 
+  - Backend: [`http://127.0.0.1:8000/api/workflows/`](http://127.0.0.1:8000/api/workflows/)
+  - Frontend Proxy: [`http://localhost:3000/api/workflows/`](http://localhost:3000/api/workflows/)
+- **Comments List:** 
+  - Backend: [`http://127.0.0.1:8000/api/comments/`](http://127.0.0.1:8000/api/comments/)
+  - Frontend Proxy: [`http://localhost:3000/api/comments/`](http://localhost:3000/api/comments/)
+- **Activities List:** 
+  - Backend: [`http://127.0.0.1:8000/api/activities/`](http://127.0.0.1:8000/api/activities/)
+  - Frontend Proxy: [`http://localhost:3000/api/activities/`](http://localhost:3000/api/activities/)
+
+*(Note: Some endpoints require an active session/token to return data instead of `401 Unauthorized`. You can login via the Web Dashboard first to establish a session, or use a tool like Postman to inject the Bearer token.)*
+
+---
+
+*Note: All local API endpoints below in the detailed tables are based on the default development server URL: **`http://127.0.0.1:8000`**.*
 
 ### Authentication
 
@@ -326,7 +378,8 @@ docker-compose up --build
 | `GET/POST` | [`/api/projects/`](http://127.0.0.1:8000/api/projects/) | List or create projects | **Req:** `{name, description, type}` |
 | `GET/PATCH` | [`/api/projects/{id}/`](http://127.0.0.1:8000/api/projects/1/) | Get or update project | **Res:** Project object |
 | `POST` | [`/api/projects/{id}/add_member/`](http://127.0.0.1:8000/api/projects/1/add_member/) | Add team member | **Req:** `{user_id, role}` |
-| `POST` | [`/api/projects/{id}/upload_attachment/`](http://127.0.0.1:8000/api/projects/1/upload_attachment/) | Upload file | **Req:** `multipart/form-data` with `file` |
+| `GET/POST` | [`/api/project-attachments/`](http://127.0.0.1:8000/api/project-attachments/) | Upload file to project | **Req:** `multipart/form-data` with `file`, `project`, `description` |
+| `GET/POST` | [`/api/project-comments/`](http://127.0.0.1:8000/api/project-comments/) | Add comment to project | **Req:** `{project, message}` |
 
 ### Workflows
 

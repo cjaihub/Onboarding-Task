@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../services/auth_service.dart';
+import '../../../services/api_service.dart';
 import '../models/user.dart';
 
 class AuthState {
@@ -36,6 +37,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   AuthNotifier() : super(AuthState(isLoading: true)) {
+    ApiService.onUnauthenticated = () {
+      state = state.copyWith(
+        isLoading: false,
+        isAuthenticated: false,
+        user: null,
+      );
+    };
     checkAuthStatus();
   }
 

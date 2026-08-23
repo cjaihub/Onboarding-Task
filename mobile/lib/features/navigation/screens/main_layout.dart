@@ -18,9 +18,9 @@ class _MainLayoutState extends State<MainLayout> {
 
   final List<Widget> _screens = [
     const ProjectDashboardScreen(),
+    const ProjectsScreen(),
     const BoardScreen(),
     const WorkItemsScreen(),
-    const ProjectsScreen(),
     const ActivityScreen(),
   ];
 
@@ -38,13 +38,17 @@ class _MainLayoutState extends State<MainLayout> {
             _currentIndex = index;
           });
         },
-        backgroundColor: UsalamaTheme.surfaceDark,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         selectedItemColor: UsalamaTheme.primaryRed,
-        unselectedItemColor: Colors.white54,
+        unselectedItemColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.54),
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+            icon: Icon(Icons.admin_panel_settings),
+            label: 'Admin Board',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.folder),
+            label: 'Projects',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.developer_board),
@@ -52,11 +56,7 @@ class _MainLayoutState extends State<MainLayout> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.list_alt),
-            label: 'Work Items',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.folder),
-            label: 'Projects',
+            label: 'Work Tasks',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.history),

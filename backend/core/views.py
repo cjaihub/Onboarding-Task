@@ -15,36 +15,72 @@ from .serializers import (
     ProjectAttachmentSerializer, ProjectCommentSerializer
 )
 
+from rest_framework.exceptions import PermissionDenied
+
 class ProjectAttachmentViewSet(viewsets.ModelViewSet):
     queryset = ProjectAttachment.objects.all()
     serializer_class = ProjectAttachmentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['project']
 
     def perform_create(self, serializer):
+        project = serializer.validated_data.get('project')
+        if project and not project.members.filter(id=self.request.user.id).exists():
+            raise PermissionDenied("You must be a member of this project to upload attachments.")
         serializer.save(uploaded_by=self.request.user)
 
 class ProjectCommentViewSet(viewsets.ModelViewSet):
     queryset = ProjectComment.objects.all().order_by('-created_at')
     serializer_class = ProjectCommentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['project']
 
     def perform_create(self, serializer):
+        # Allow any authenticated user to comment on team projects
         serializer.save(author=self.request.user)
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['project_type', 'status']
+    search_fields = ['name', 'description']
+
+    def perform_create(self, serializer):
+        project = serializer.save()
+        if self.request.user.is_authenticated:
+            project.members.add(self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def add_member(self, request, pk=None):
+        project = self.get_object()
+        user_id = request.data.get('user_id')
+        try:
+            user = User.objects.get(id=user_id)
+            project.members.add(user)
+            return Response(ProjectSerializer(project, context={'request': request}).data)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['post'])
+    def remove_member(self, request, pk=None):
+        project = self.get_object()
+        user_id = request.data.get('user_id')
+        try:
+            user = User.objects.get(id=user_id)
+            project.members.remove(user)
+            return Response(ProjectSerializer(project, context={'request': request}).data)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 class WorkItemFilter(django_filters.FilterSet):
     tags = django_filters.CharFilter(method='filter_tags')
@@ -63,7 +99,7 @@ class WorkItemFilter(django_filters.FilterSet):
 class WorkItemViewSet(viewsets.ModelViewSet):
     queryset = WorkItem.objects.all().order_by('-created_at')
     serializer_class = WorkItemSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = WorkItemFilter
     search_fields = ['reference_number', 'title', 'description']
@@ -176,7 +212,7 @@ class WorkItemViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -184,12 +220,12 @@ class CommentViewSet(viewsets.ModelViewSet):
 class ActivityViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Activity.objects.all()
     serializer_class = ActivitySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 from rest_framework.decorators import api_view, action, permission_classes
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def metadata(request):
     from .models import Project
     project_types = [{'value': k, 'label': v} for k, v in Project.PROJECT_TYPES]
@@ -212,7 +248,7 @@ def metadata(request):
     })
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def dashboard_stats(request):
     total = WorkItem.objects.count()
     
@@ -254,7 +290,7 @@ def dashboard_stats(request):
 class WorkflowViewSet(viewsets.ModelViewSet):
     queryset = Workflow.objects.all().order_by('-created_at')
     serializer_class = WorkflowSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     search_fields = ['name', 'description']
 
@@ -308,13 +344,13 @@ class WorkflowViewSet(viewsets.ModelViewSet):
 class WorkflowExecutionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = WorkflowExecution.objects.all().order_by('-started_at')
     serializer_class = WorkflowExecutionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['workflow', 'status']
 
 class WorkflowExecutionStepViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = WorkflowExecutionStep.objects.all().order_by('started_at')
     serializer_class = WorkflowExecutionStepSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['execution', 'status']

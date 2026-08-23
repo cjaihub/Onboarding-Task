@@ -12,10 +12,11 @@ class LoadingView extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const CircularProgressIndicator(),
-          if (message != null) ...[
-            const SizedBox(height: 16),
-            Text(message!, style: const TextStyle(color: Colors.white70)),
-          ]
+          if (message != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Text(message!, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))),
+            ),
         ],
       ),
     );

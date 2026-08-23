@@ -32,3 +32,5 @@ mobile/.flutter-plugins-dependencies
 Thumbs.db
 .vscode/
 .idea/
+backend/media/
+implementation_plan.md

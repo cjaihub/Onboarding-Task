@@ -45,7 +45,7 @@ export default function DashboardPage() {
           {/* Work Item Stats */}
           <div className="surface-card rounded-xl p-5">
             <h3 className="font-semibold text-text-primary mb-1 flex items-center gap-2">
-              <Layers size={16} className="text-brand" /> Work Items
+              <Layers size={16} className="text-brand" /> Work Tasks
             </h3>
             <p className="text-xs text-text-muted mb-4">Live counts by status</p>
             {stats ? (

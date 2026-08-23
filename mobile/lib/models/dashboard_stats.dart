@@ -1,3 +1,5 @@
+import 'activity.dart';
+
 class DashboardStats {
   final int total;
   final int open;
@@ -7,6 +9,9 @@ class DashboardStats {
   final int closed;
   final int critical;
   final int overdue;
+  final Map<String, int> byStatus;
+  final Map<String, int> byPriority;
+  final List<Activity> recentActivity;
 
   DashboardStats({
     required this.total,
@@ -17,6 +22,9 @@ class DashboardStats {
     required this.closed,
     required this.critical,
     required this.overdue,
+    required this.byStatus,
+    required this.byPriority,
+    required this.recentActivity,
   });
 
   factory DashboardStats.fromJson(Map<String, dynamic> json) {
@@ -29,6 +37,12 @@ class DashboardStats {
       closed: json['closed'] ?? 0,
       critical: json['critical'] ?? 0,
       overdue: json['overdue'] ?? 0,
+      byStatus: Map<String, int>.from(json['by_status'] ?? {}),
+      byPriority: Map<String, int>.from(json['by_priority'] ?? {}),
+      recentActivity: (json['recent_activity'] as List<dynamic>?)
+              ?.map((e) => Activity.fromJson(e))
+              .toList() ??
+          [],
     );
   }
 }

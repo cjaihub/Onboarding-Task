@@ -7,6 +7,7 @@ import '../../../widgets/error_view.dart';
 import '../../../widgets/loading_view.dart';
 import '../../auth/screens/user_profile_screen.dart';
 import '../../workflows/screens/workflows_screen.dart';
+import 'project_upload_dialog.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   final int projectId;
@@ -73,7 +74,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
 
     setState(() => _isSendingChat = true);
     try {
-      await _api.post('/projects/${widget.projectId}/comments/', {'message': msg});
+      await _api.post('/project-comments/', {'project': widget.projectId, 'message': msg});
       _chatController.clear();
       await _fetchData();
     } catch (e) {
@@ -105,7 +106,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (_project!.description != null && _project!.description!.isNotEmpty) ...[
-                      const Text('Description', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white54, fontSize: 12)),
+                      Text('Description', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54), fontSize: 12)),
                       const SizedBox(height: 4),
                       Text(_project!.description!),
                       const SizedBox(height: 16),
@@ -116,7 +117,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Type', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white54, fontSize: 12)),
+                            Text('Type', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54), fontSize: 12)),
                             const SizedBox(height: 4),
                             Text(_project!.projectType),
                           ],
@@ -124,7 +125,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Created At', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white54, fontSize: 12)),
+                            Text('Created At', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54), fontSize: 12)),
                             const SizedBox(height: 4),
                             Text(_project!.createdAt != null ? '${_project!.createdAt!.year}-${_project!.createdAt!.month}-${_project!.createdAt!.day}' : 'N/A'),
                           ],
@@ -191,7 +192,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
                             Text(member.fullName.isNotEmpty ? member.fullName : member.username,
                                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                             Text('@${member.username}',
-                                style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54), fontSize: 12)),
                             if (member.profile?.role.isNotEmpty == true)
                               Text(member.profile!.role,
                                   style: const TextStyle(
@@ -201,7 +202,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right, color: Colors.white24, size: 18),
+                      Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.24), size: 18),
                     ],
                   ),
                 ),
@@ -215,7 +216,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
 
   Widget _buildAttachmentsTab() {
     if (_project!.attachments.isEmpty) {
-      return const Center(child: Text('No files attached.', style: TextStyle(color: Colors.white54)));
+      return Center(child: Text('No files attached.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54))));
     }
     return ListView.builder(
       padding: const EdgeInsets.all(16.0),
@@ -230,7 +231,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
             title: Text(attachment.description),
             subtitle: Text('By ${attachment.uploadedByName} • ${attachment.createdAt?.toString().split(' ')[0] ?? ''}'),
             trailing: IconButton(
-              icon: const Icon(Icons.download, color: Colors.white54),
+              icon: Icon(Icons.download, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54)),
               onPressed: () {
                 // Download file logic
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Downloading file...')));
@@ -247,21 +248,37 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
       children: [
         Expanded(
           child: _project!.comments.isEmpty
-              ? const Center(child: Text('No messages yet. Start the conversation!', style: TextStyle(color: Colors.white54)))
+              ? Center(child: Text('No messages yet. Start the conversation!', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54))))
               : ListView.builder(
-                  padding: const EdgeInsets.all(16.0),
+                  reverse: true,
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
                   itemCount: _project!.comments.length,
                   itemBuilder: (context, index) {
                     final msg = _project!.comments[index];
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
+                      padding: const EdgeInsets.only(bottom: 20.0),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          CircleAvatar(
-                            backgroundColor: Colors.grey.shade800,
-                            radius: 16,
-                            child: Text(msg.authorName.isNotEmpty ? msg.authorName[0].toUpperCase() : '?'),
+                          Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                )
+                              ],
+                            ),
+                            child: CircleAvatar(
+                              backgroundColor: UsalamaTheme.primaryRed.withValues(alpha: 0.15),
+                              radius: 18,
+                              child: Text(
+                                msg.authorName.isNotEmpty ? msg.authorName[0].toUpperCase() : '?',
+                                style: const TextStyle(fontWeight: FontWeight.w800, color: UsalamaTheme.primaryRed, fontSize: 14),
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -270,23 +287,24 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
                               children: [
                                 Row(
                                   children: [
-                                    Text(msg.authorName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                    Text(msg.authorName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                                     const SizedBox(width: 8),
-                                    Text(msg.createdAt != null ? '${msg.createdAt!.hour}:${msg.createdAt!.minute.toString().padLeft(2, '0')}' : '', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                                    Text(msg.createdAt != null ? '${msg.createdAt!.hour}:${msg.createdAt!.minute.toString().padLeft(2, '0')}' : '', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 11, fontWeight: FontWeight.w600)),
                                   ],
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 6),
                                 Container(
-                                  padding: const EdgeInsets.all(12),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).cardColor,
+                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04),
                                     borderRadius: const BorderRadius.only(
-                                      topRight: Radius.circular(12),
-                                      bottomLeft: Radius.circular(12),
-                                      bottomRight: Radius.circular(12),
+                                      topRight: Radius.circular(16),
+                                      bottomLeft: Radius.circular(16),
+                                      bottomRight: Radius.circular(16),
                                     ),
+                                    border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
                                   ),
-                                  child: Text(msg.message),
+                                  child: Text(msg.message, style: const TextStyle(fontSize: 14, height: 1.4)),
                                 ),
                               ],
                             ),
@@ -298,29 +316,73 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
                 ),
         ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            border: Border(top: BorderSide(color: Colors.grey.shade800)),
+            color: Theme.of(context).scaffoldBackgroundColor,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, -4),
+              )
+            ],
           ),
           child: SafeArea(
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
+                IconButton(
+                  icon: const Icon(Icons.attach_file_rounded),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                  onPressed: () {
+                    showDialog(context: context, builder: (_) => ProjectUploadDialog(project: _project!)).then((_) => _fetchData());
+                  },
+                ),
                 Expanded(
-                  child: TextField(
-                    controller: _chatController,
-                    decoration: const InputDecoration(
-                      hintText: 'Type a message...',
-                      border: InputBorder.none,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                     ),
-                    maxLines: null,
+                    child: TextField(
+                      controller: _chatController,
+                      minLines: 1,
+                      maxLines: 4,
+                      style: const TextStyle(fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'Type a message...',
+                        hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 14),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        filled: true,
+                        fillColor: Colors.transparent,
+                      ),
+                    ),
                   ),
                 ),
-                IconButton(
-                  icon: _isSendingChat 
-                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.send, color: UsalamaTheme.primaryRed),
-                  onPressed: _isSendingChat ? null : _sendChat,
+                const SizedBox(width: 8),
+                Container(
+                  margin: const EdgeInsets.only(bottom: 2),
+                  decoration: BoxDecoration(
+                    color: UsalamaTheme.primaryRed,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: UsalamaTheme.primaryRed.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      )
+                    ],
+                  ),
+                  child: IconButton(
+                    icon: _isSendingChat 
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                    onPressed: _isSendingChat ? null : _sendChat,
+                  ),
                 ),
               ],
             ),
@@ -353,7 +415,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
           children: [
             Text(_project!.name),
             Container(
-              margin: const EdgeInsets.top(4),
+              margin: const EdgeInsets.only(top: 4.0),
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
                 color: _getStatusColor(_project!.status).withOpacity(0.15),
@@ -377,11 +439,15 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: UsalamaTheme.primaryRed,
+          labelColor: UsalamaTheme.primaryRed,
+          unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.54),
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
           tabs: const [
             Tab(icon: Icon(Icons.dashboard, size: 20), text: 'Dashboard'),
             Tab(icon: Icon(Icons.account_tree, size: 20), text: 'Workflows'),
-            Tab(icon: Icon(Icons.attach_file, size: 20), text: 'Files'),
             Tab(icon: Icon(Icons.chat, size: 20), text: 'Chat'),
+            Tab(icon: Icon(Icons.attach_file, size: 20), text: 'Files'),
           ],
         ),
       ),
@@ -390,8 +456,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
         children: [
           _buildDashboardTab(),
           WorkflowsScreen(projectId: widget.projectId),
-          _buildAttachmentsTab(),
           _buildChatTab(),
+          _buildAttachmentsTab(),
         ],
       ),
     );
@@ -399,8 +465,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'PLANNING':
-        return Colors.blue;
+      case 'IN_PROGRESS':
+        return Colors.orange;
       case 'ACTIVE':
         return Colors.green;
       case 'ON_HOLD':
@@ -408,7 +474,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
       case 'COMPLETED':
         return Colors.purple;
       default:
-        return Colors.blue;
+        return Colors.grey;
     }
   }
 }

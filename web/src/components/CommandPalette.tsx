@@ -103,7 +103,7 @@ export function CommandPalette() {
             <div className="space-y-4">
               {workItems.length > 0 && (
                 <div className="space-y-1">
-                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Work Items</div>
+                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Work Tasks</div>
                   {workItems.map(item => (
                     <button
                       key={item.id}

@@ -114,7 +114,7 @@ class _WorkItemDetailScreenState extends ConsumerState<WorkItemDetailScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.insert_photo, color: Colors.blue),
+              leading: const Icon(Icons.insert_photo, color: UsalamaTheme.primaryRed),
               title: const Text('Photo & Video Library'),
               onTap: () {
                 Navigator.pop(context);

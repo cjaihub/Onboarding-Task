@@ -1,8 +1,16 @@
 import { apiClient } from '../lib/api-client';
 import { Project, PaginatedResponse, ProjectAttachment, ProjectComment } from '../types/api';
 
-export async function fetchProjects(): Promise<Project[]> {
-  const response = await apiClient<PaginatedResponse<Project> | Project[]>('/projects/');
+export async function fetchProjects(params?: { search?: string; project_type?: string }): Promise<Project[]> {
+  const queryParams = new URLSearchParams();
+  if (params) {
+    if (params.search) queryParams.append('search', params.search);
+    if (params.project_type && params.project_type !== 'All') queryParams.append('project_type', params.project_type);
+  }
+  const queryString = queryParams.toString();
+  const endpoint = queryString ? `/projects/?${queryString}` : '/projects/';
+
+  const response = await apiClient<PaginatedResponse<Project> | Project[]>(endpoint);
   if (Array.isArray(response)) return response;
   return response.results || [];
 }
@@ -53,6 +61,26 @@ export async function uploadProjectAttachment(projectId: number, file: File, des
 export async function deleteProjectAttachment(id: number): Promise<void> {
   return apiClient<void>(`/project-attachments/${id}/`, {
     method: 'DELETE',
+  });
+}
+
+export async function deleteProject(id: number): Promise<void> {
+  return apiClient(`/projects/${id}/`, {
+    method: 'DELETE',
+  });
+}
+
+export async function addProjectMember(projectId: number, userId: number): Promise<Project> {
+  return apiClient<Project>(`/projects/${projectId}/add_member/`, {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId }),
+  });
+}
+
+export async function removeProjectMember(projectId: number, userId: number): Promise<Project> {
+  return apiClient<Project>(`/projects/${projectId}/remove_member/`, {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId }),
   });
 }
 

@@ -19,7 +19,7 @@ class UsalamaApp extends ConsumerWidget {
     return MaterialApp(
       title: 'Usalama',
       debugShowCheckedModeBanner: false,
-      themeMode: currentThemeMode,
+      themeMode: ThemeMode.dark,
       theme: UsalamaTheme.lightTheme,
       darkTheme: UsalamaTheme.darkTheme,
       home: const AuthWrapper(),
@@ -44,7 +44,12 @@ class AuthWrapper extends ConsumerWidget {
       );
     }
 
-    // Both authenticated users and guests go to MainLayout
+    // If not authenticated, force the user to log in
+    if (!authState.isAuthenticated) {
+      return const LoginScreen();
+    }
+
+    // Authenticated users go to MainLayout
     return const MainLayout();
   }
 }

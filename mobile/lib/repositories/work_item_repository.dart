@@ -41,4 +41,33 @@ class WorkItemRepository {
     });
     return Comment.fromJson(response);
   }
+
+  Future<WorkItem> createWorkItem({
+    required int projectId,
+    required String title,
+    required String description,
+    required String category,
+    required String priority,
+    int? assignedTo,
+  }) async {
+    final Map<String, dynamic> body = {
+      'project': projectId,
+      'title': title,
+      'description': description,
+      'category': category,
+      'priority': priority,
+    };
+    if (assignedTo != null) {
+      body['assigned_to'] = assignedTo;
+    }
+    final response = await _apiService.post('/work-items/', body);
+    return WorkItem.fromJson(response);
+  }
+
+  Future<WorkItem> assignWorkItem(int id, int assigneeId) async {
+    final response = await _apiService.post('/work-items/$id/assign/', {
+      'assigned_to': assigneeId,
+    });
+    return WorkItem.fromJson(response);
+  }
 }

@@ -63,6 +63,10 @@ export async function apiClient<T>(
   }
 
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+
     const error: ApiError = {
       message: 'API Error',
       status: response.status,

@@ -126,10 +126,12 @@ export function WorkItemsView() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>Work Items</h1>
-          <p className="mt-1 text-sm hidden sm:block" style={{ color: 'var(--text-secondary)' }}>Investigate, prioritize and manage engineering work.</p>
+          <h1 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>Work Tasks</h1>
+          <p className="mt-1" style={{ color: 'var(--text-secondary)' }}>
+            Manage and track all work tasks across projects.
+          </p>
         </div>
         <div className="flex gap-2">
           <Button 

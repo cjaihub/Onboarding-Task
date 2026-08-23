@@ -136,7 +136,7 @@ export default function Dashboard() {
           
           {/* STATUS OVERVIEW */}
           <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0f1115] p-6 shadow-sm">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-6">Work Items by Status</h3>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-6">Work Tasks by Status</h3>
             {statsLoading ? (
               <div className="space-y-4">
                 <Skeleton className="h-4 w-full" />

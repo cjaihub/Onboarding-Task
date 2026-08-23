@@ -51,9 +51,9 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   Widget _buildActivityItem(Activity item) {
     return ListTile(
-      leading: const CircleAvatar(
-        backgroundColor: UsalamaTheme.surfaceDark,
-        child: Icon(Icons.history, color: UsalamaTheme.primaryRed),
+      leading: CircleAvatar(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        child: const Icon(Icons.history, color: UsalamaTheme.primaryRed),
       ),
       title: Text(item.activityType),
       subtitle: Column(
@@ -63,7 +63,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
             Text('Changed ${item.fieldChanged}: ${item.oldValue} -> ${item.newValue}'),
           Text(
             DateFormat('MM/dd/yyyy hh:mm a').format(item.timestamp),
-            style: const TextStyle(fontSize: 12, color: Colors.white54),
+            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54)),
           ),
         ],
       ),
@@ -98,16 +98,16 @@ class _ActivityScreenState extends State<ActivityScreen> {
           child: _activities!.isEmpty
               ? ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  children: const [
-                    SizedBox(height: 100),
-                    Center(child: Text('No recent activity.', style: TextStyle(color: Colors.white54))),
+                  children: [
+                    const SizedBox(height: 100),
+                    Center(child: Text('No recent activity.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54)))),
                   ],
                 )
               : ListView.separated(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   physics: const AlwaysScrollableScrollPhysics(),
                   itemCount: _activities!.length,
-                  separatorBuilder: (context, index) => const Divider(color: Colors.white24),
+                  separatorBuilder: (context, index) => Divider(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.24)),
                   itemBuilder: (context, index) {
                     return _buildActivityItem(_activities![index]);
                   },

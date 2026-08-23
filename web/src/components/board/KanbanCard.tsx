@@ -2,9 +2,9 @@
 import * as React from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { WorkItem, User } from '../../types/api'
+import { WorkItem, User, Project } from '../../types/api'
 import { 
-  AlertCircle, MessageSquare, Clock, Tag, 
+  AlertCircle, MessageSquare, Clock, Tag, Folder,
   Eye, Pencil, Mail, GitPullRequest, Loader2, GripVertical
 } from 'lucide-react'
 
@@ -31,13 +31,14 @@ const PRIORITY_CONFIG: Record<string, { color: string; bg: string; label: string
 interface KanbanCardProps {
   item: WorkItem
   users: User[]
+  projects?: Project[]
   isMutating?: boolean
   onPreview: (id: number) => void
   onEdit: (item: WorkItem) => void
   onChat: (id: number) => void
 }
 
-export function KanbanCard({ item, users, isMutating = false, onPreview, onEdit, onChat }: KanbanCardProps) {
+export function KanbanCard({ item, users, projects = [], isMutating = false, onPreview, onEdit, onChat }: KanbanCardProps) {
   const {
     attributes, listeners, setNodeRef,
     transform, transition, isDragging,
@@ -52,6 +53,7 @@ export function KanbanCard({ item, users, isMutating = false, onPreview, onEdit,
   const style = { transform: CSS.Transform.toString(transform), transition }
 
   const assignee = users.find(u => u.id === item.assigned_to)
+  const project = projects.find(p => p.id === item.project)
   const priority = PRIORITY_CONFIG[item.priority] ?? PRIORITY_CONFIG.MEDIUM
   const isOverdue = item.due_date && new Date(item.due_date) < new Date() && item.status !== 'CLOSED' && item.status !== 'RESOLVED'
   const commentCount = item.comments?.length ?? 0
@@ -124,30 +126,39 @@ export function KanbanCard({ item, users, isMutating = false, onPreview, onEdit,
           {item.title}
         </h4>
 
-        {/* Tags */}
-        {item.tags && item.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {item.tags.slice(0, 3).map(t => (
-              <span key={t} className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded"
-                style={{ background: 'rgba(255,255,255,0.05)', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <Tag className="w-2 h-2" />{t}
-              </span>
-            ))}
-            {item.tags.length > 3 && (
-              <span className="text-[10px] text-gray-500">+{item.tags.length - 3}</span>
-            )}
-          </div>
-        )}
+        {/* Tags & Project */}
+        <div className="flex flex-wrap gap-1 mb-3">
+          {project && (
+            <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded"
+              style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <Folder className="w-2.5 h-2.5" />
+              <span className="truncate max-w-[100px]">{project.name}</span>
+            </span>
+          )}
+          {item.tags && item.tags.slice(0, 3).map(t => (
+            <span key={t} className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded"
+              style={{ background: 'rgba(255,255,255,0.05)', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <Tag className="w-2 h-2" />{t}
+            </span>
+          ))}
+          {item.tags && item.tags.length > 3 && (
+            <span className="text-[10px] text-gray-500">+{item.tags.length - 3}</span>
+          )}
+        </div>
 
         {/* Footer row: avatar, date, comments */}
         <div className="flex items-center justify-between mt-auto pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           {/* Assignee avatar */}
           <div className="flex items-center gap-1.5">
             {assignee ? (
-              <span className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0 ring-1 ring-black/50"
+              <span className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0 ring-1 ring-black/50 overflow-hidden"
                 style={{ background: getAvatarColor(assignee.username) }}
                 title={assignee.username}>
-                {getInitials(assignee.username)}
+                {assignee.profile?.avatar_url ? (
+                  <img src={assignee.profile.avatar_url} alt={assignee.username} className="w-full h-full object-cover" />
+                ) : (
+                  getInitials(assignee.username)
+                )}
               </span>
             ) : (
               <span className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 ring-1 ring-white/10"

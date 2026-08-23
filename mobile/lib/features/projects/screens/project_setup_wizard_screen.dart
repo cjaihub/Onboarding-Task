@@ -232,7 +232,7 @@ class _ProjectSetupWizardScreenState extends State<ProjectSetupWizardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Card(
-                    color: UsalamaTheme.cardBackground,
+                    color: Theme.of(context).cardColor,
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(

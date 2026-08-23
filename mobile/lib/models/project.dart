@@ -76,6 +76,8 @@ class Project {
   final List<User> membersDetail;
   final List<ProjectAttachment> attachments;
   final List<ProjectComment> comments;
+  final int taskCount;
+  final int progress;
 
   Project({
     required this.id,
@@ -89,6 +91,8 @@ class Project {
     required this.membersDetail,
     required this.attachments,
     required this.comments,
+    this.taskCount = 0,
+    this.progress = 0,
   });
 
   factory Project.fromJson(Map<String, dynamic> json) {
@@ -104,6 +108,8 @@ class Project {
       membersDetail: (json['members_detail'] as List<dynamic>?)?.map((e) => User.fromJson(e)).toList() ?? [],
       attachments: (json['attachments'] as List<dynamic>?)?.map((e) => ProjectAttachment.fromJson(e)).toList() ?? [],
       comments: (json['comments'] as List<dynamic>?)?.map((e) => ProjectComment.fromJson(e)).toList() ?? [],
+      taskCount: json['task_count'] ?? 0,
+      progress: json['progress'] ?? 0,
     );
   }
 }

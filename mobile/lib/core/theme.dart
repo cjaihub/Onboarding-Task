@@ -5,19 +5,37 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 final themeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 
 class UsalamaTheme {
-  static const Color primaryRed = Color(0xFFE53935);
+  // A punchier, high-contrast Pro Red
+  static const Color primaryRed = Color(0xFFEF4444);
   
   // Dark Theme Colors
-  static const Color backgroundDark = Color(0xFF121212);
-  static const Color surfaceDark = Color(0xFF1E1E1E);
-  static const Color textHighContrastDark = Colors.white;
-  static const Color textSecondaryDark = Colors.white70;
+  static const Color backgroundDark = Color(0xFF080A0F);
+  static const Color surfaceDark = Color(0xFF0F1115);
+  static const Color surfaceRaisedDark = Color(0xFF161B24);
+  static const Color textHighContrastDark = Color(0xFFF0F2F7);
+  static const Color textSecondaryDark = Color(0xFF9CA3AF);
+  static const Color textMutedDark = Color(0xFF4B5563);
 
   // Light Theme Colors
-  static const Color backgroundLight = Color(0xFFF5F5F5);
+  static const Color backgroundLight = Color(0xFFF7F7F9);
   static const Color surfaceLight = Color(0xFFFFFFFF);
-  static const Color textHighContrastLight = Colors.black87;
-  static const Color textSecondaryLight = Colors.black54;
+  static const Color textHighContrastLight = Color(0xFF1A1A1A);
+  static const Color textSecondaryLight = Color(0xFF6E6E73);
+
+  // Common Typography for "Pro UI/UX"
+  static TextTheme _buildTextTheme(Color textColor, Color secondaryColor) {
+    return TextTheme(
+      displayLarge: TextStyle(color: textColor, fontWeight: FontWeight.w900, letterSpacing: -1.0),
+      displayMedium: TextStyle(color: textColor, fontWeight: FontWeight.w800, letterSpacing: -0.8),
+      displaySmall: TextStyle(color: textColor, fontWeight: FontWeight.w700, letterSpacing: -0.5),
+      headlineMedium: TextStyle(color: textColor, fontWeight: FontWeight.w700, letterSpacing: -0.5),
+      titleLarge: TextStyle(color: textColor, fontWeight: FontWeight.w700, letterSpacing: -0.3, fontSize: 20),
+      titleMedium: TextStyle(color: textColor, fontWeight: FontWeight.w600, letterSpacing: -0.2, fontSize: 16),
+      bodyLarge: TextStyle(color: textColor, fontWeight: FontWeight.w500, fontSize: 15),
+      bodyMedium: TextStyle(color: textColor, fontWeight: FontWeight.w400, fontSize: 14),
+      labelLarge: TextStyle(color: secondaryColor, fontWeight: FontWeight.w600, fontSize: 12, letterSpacing: 0.5),
+    );
+  }
 
   static ThemeData get lightTheme {
     return ThemeData.light().copyWith(
@@ -27,56 +45,65 @@ class UsalamaTheme {
         primary: primaryRed,
         surface: surfaceLight,
         onSurface: textHighContrastLight,
+        secondary: primaryRed,
       ),
+      textTheme: _buildTextTheme(textHighContrastLight, textSecondaryLight),
       appBarTheme: const AppBarTheme(
-        backgroundColor: surfaceLight,
+        backgroundColor: backgroundLight,
         foregroundColor: textHighContrastLight,
         elevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
           color: textHighContrastLight,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
+          fontSize: 22,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
         ),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: surfaceLight,
+        selectedItemColor: primaryRed,
+        unselectedItemColor: textSecondaryLight,
+        elevation: 10,
+        type: BottomNavigationBarType.fixed,
+        selectedLabelStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 11),
+        unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
       ),
       cardTheme: CardThemeData(
         color: surfaceLight,
-        elevation: 2,
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        elevation: 0,
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.black.withValues(alpha: 0.05)),
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryRed,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-          textStyle: const TextStyle(fontWeight: FontWeight.bold),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, letterSpacing: 0.2),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.black12,
+        fillColor: Colors.black.withValues(alpha: 0.03),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: const BorderSide(color: Colors.black12),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.05)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: const BorderSide(color: primaryRed),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: primaryRed, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
-      chipTheme: ChipThemeData(
-        backgroundColor: Colors.black12,
-        labelStyle: const TextStyle(color: textHighContrastLight, fontSize: 12, fontWeight: FontWeight.w600),
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }
@@ -89,56 +116,70 @@ class UsalamaTheme {
         primary: primaryRed,
         surface: surfaceDark,
         onSurface: textHighContrastDark,
+        secondary: primaryRed,
       ),
+      textTheme: _buildTextTheme(textHighContrastDark, textSecondaryDark),
       appBarTheme: const AppBarTheme(
-        backgroundColor: surfaceDark,
+        backgroundColor: backgroundDark,
         foregroundColor: textHighContrastDark,
         elevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
           color: textHighContrastDark,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.3,
         ),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: surfaceDark,
+        selectedItemColor: primaryRed,
+        unselectedItemColor: textSecondaryDark,
+        elevation: 10,
+        type: BottomNavigationBarType.fixed,
+        selectedLabelStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 11),
+        unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
       ),
       cardTheme: CardThemeData(
         color: surfaceDark,
-        elevation: 2,
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        elevation: 0,
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.white.withOpacity(0.06)),
+        ),
+      ),
+      dividerTheme: DividerThemeData(
+        color: Colors.white.withOpacity(0.06),
+        thickness: 1,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryRed,
-          foregroundColor: textHighContrastDark,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-          textStyle: const TextStyle(fontWeight: FontWeight.bold),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, letterSpacing: 0.2),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.black26,
+        fillColor: surfaceRaisedDark,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: const BorderSide(color: Colors.white24),
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: const BorderSide(color: primaryRed),
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: primaryRed, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
-      chipTheme: ChipThemeData(
-        backgroundColor: Colors.white12,
-        labelStyle: const TextStyle(color: textHighContrastDark, fontSize: 12, fontWeight: FontWeight.w600),
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        hintStyle: const TextStyle(color: textMutedDark, fontSize: 14),
       ),
     );
   }
@@ -146,7 +187,7 @@ class UsalamaTheme {
   static Color getStatusColor(String status) {
     switch (status.toUpperCase()) {
       case 'OPEN':
-        return Colors.blue;
+        return Colors.teal;
       case 'IN_PROGRESS':
         return Colors.orange;
       case 'REVIEW':
@@ -169,7 +210,7 @@ class UsalamaTheme {
       case 'MEDIUM':
         return Colors.amber;
       case 'LOW':
-        return Colors.lightBlue;
+        return Colors.teal;
       default:
         return Colors.grey.shade400;
     }

@@ -26,7 +26,7 @@ export function Header() {
   const routeTitles: Record<string, { title: string; subtitle: string }> = {
     "/":            { title: "Dashboard",  subtitle: "Overview of your engineering operations" },
     "/my-work":     { title: "My Work",    subtitle: "Items assigned to you" },
-    "/work-items":  { title: "Work Items", subtitle: "All tracking items" },
+    "/work-items":  { title: "Work Tasks", subtitle: "All tracking items" },
     "/board":       { title: "Board",      subtitle: "Kanban tracking" },
     "/projects":    { title: "Projects",   subtitle: "Project portfolios" },
     "/activity":    { title: "Activity",   subtitle: "Recent updates" },

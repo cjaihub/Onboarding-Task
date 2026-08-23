@@ -8,14 +8,14 @@ import { useAuth } from '../contexts/AuthContext'
 
 const mainNavItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'My Work', href: '/my-work', icon: Briefcase },
-  { name: 'Work Items', href: '/work-items', icon: ListTodo },
-  { name: 'Board', href: '/board', icon: Kanban },
   { name: 'Projects', href: '/projects', icon: FolderOpen },
-  { name: 'Activity', href: '/activity', icon: Activity },
+  { name: 'Board', href: '/board', icon: Kanban },
+  { name: 'Work Tasks', href: '/work-items', icon: ListTodo },
+  { name: 'Workflows', href: '/workflows', icon: Network },
+  { name: 'My Work', href: '/my-work', icon: Briefcase },
   { name: 'Calendar', href: '/calendar', icon: Calendar },
   { name: 'Reports', href: '/reports', icon: FileText },
-  { name: 'Workflows', href: '/workflows', icon: Network },
+  { name: 'Activity', href: '/activity', icon: Activity },
 ]
 
 const shortcutItems = [
