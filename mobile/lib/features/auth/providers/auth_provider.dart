@@ -34,7 +34,9 @@ class AuthState {
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthService _authService = AuthService();
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final FlutterSecureStorage _storage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
 
   AuthNotifier() : super(AuthState(isLoading: true)) {
     ApiService.onUnauthenticated = () {
@@ -50,7 +52,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> checkAuthStatus() async {
     state = state.copyWith(isLoading: true);
     try {
-      final token = await _storage.read(key: 'access_token');
+      String? token;
+      try {
+        token = await _storage.read(key: 'access_token');
+      } catch (e) {
+        await _storage.deleteAll();
+      }
+      
       if (token != null) {
         final user = await _authService.getMe();
         state = state.copyWith(

@@ -40,14 +40,23 @@ class ApiService {
     return 'ws://10.0.2.2:8000/ws';
   }
   
-  static final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  static final FlutterSecureStorage _storage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
 
   Future<Map<String, String>> _getHeaders() async {
     final headers = {
       'Content-Type': 'application/json',
       'Connection': 'close', // Prevents connection reset by peer with dev server
     };
-    final token = await _storage.read(key: 'access_token');
+    
+    String? token;
+    try {
+      token = await _storage.read(key: 'access_token');
+    } catch (e) {
+      await _storage.deleteAll();
+    }
+
     if (token != null) {
       headers['Authorization'] = 'Bearer $token';
     }

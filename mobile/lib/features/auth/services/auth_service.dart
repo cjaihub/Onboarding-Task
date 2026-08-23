@@ -4,7 +4,9 @@ import '../models/user.dart';
 
 class AuthService {
   final ApiService _apiService = ApiService();
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final FlutterSecureStorage _storage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
 
   Future<void> login(String username, String password) async {
     final response = await _apiService.post('/auth/login/', {
