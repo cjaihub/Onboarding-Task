@@ -11,7 +11,7 @@ For the architecture, I chose a decoupled, multi-client approach organized withi
 
 I positioned the Django backend as the absolute source of truth. In complex operational tools, client-side validation is never enough. By centralizing the domain logic in Django, I ensured that critical workflow rules—such as preventing a ticket from being resolved without an assignee—are strictly enforced at the API layer. This prevents our web and mobile clients from ever drifting out of sync regarding business rules.
 
-For the web frontend, I utilized Next.js combined with TanStack Query. While Next.js handles the heavy lifting of routing and layout, TanStack Query excels at managing server state. This combination allows the UI to perform optimistic updates—where the board instantly reflects a user's action—while seamlessly syncing with the backend in the background.
+For the web frontend, I utilized Next.js combined with TanStack Query. While Next.js handles the heavy lifting of routing and layout, TanStack Query excels at managing server state. This combination allows the UI to perform optimistic updates—where the Kanban board instantly reflects a user's drag-and-drop action—while seamlessly syncing with the backend in the background. If the API rejects a state transition due to business rules, TanStack Query automatically rolls back the UI state, providing immediate, error-free feedback to the user.
 
 The database layer utilizes SQLite for the scope of this initial environment. It provides a zero-configuration, highly reliable relational data store that perfectly satisfies our persistence needs without the immediate overhead of orchestrating a PostgreSQL cluster, though the Django ORM makes that transition trivial when we scale.
 
@@ -32,6 +32,10 @@ The layout itself is highly intentional. When viewing a specific work item, I sp
 A tracking tool is only as good as its data integrity. I designed the domain model to treat concepts like 'Category' and 'Priority' not as optional tags, but as mandatory classifications. An issue must be explicitly categorized as a Bug, Incident, Feature Request, or Operational Task. This ensures the team can accurately triage workloads.
 
 The workflow lifecycle is equally strict. Work items move through a defined matrix: Open, In Progress, Review, Resolved, and Closed. I built backend services to intercept every transition attempt. If a developer tries to resolve a ticket that hasn't been assigned to anyone, the backend rejects the mutation, and the frontend gracefully handles the error. 
+
+To ensure our API remains incredibly robust under partial updates, I designed our Data Transfer Objects (serializers) to defensively handle missing payload keys during `PATCH` requests. Instead of blindly relying on dictionary indexing (which often causes catastrophic `KeyError` crashes in naive implementations), the serializers safely evaluate incoming changes against the existing database instance state, preserving data integrity perfectly.
+
+Furthermore, recognizing that engineering teams often need flexible, cross-cutting categorizations, I introduced a denormalized JSON `tags` architecture. This allows work items to have flexible metadata tags (e.g., "Production", "M-Pesa") that are fully searchable and filterable in the Next.js UI, all without the query-overhead of maintaining complex many-to-many junction tables.
 
 To further streamline operations, taking ownership of a task is a single-click action. The assignment system queries the actual registered user database, preventing free-text typos and ensuring absolute accountability.
 
