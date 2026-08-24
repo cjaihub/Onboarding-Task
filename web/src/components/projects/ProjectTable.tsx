@@ -8,7 +8,7 @@ import { fetchUsers } from '@/api/users';
 import { apiClient } from '@/lib/api-client';
 import { Project, WorkItem, User, DashboardStats } from '@/types/api';
 import {
-  ChevronDown, ChevronRight, Folder, Layout,
+  ChevronDown, ChevronRight, ChevronLeft, Folder, Layout,
   ListTodo, Plus, X, Mail, Phone, Briefcase, User as UserIcon,
   Search, Filter, Trash2, ArrowRight
 } from 'lucide-react';
@@ -231,6 +231,8 @@ export default function ProjectTable({ onStatsLoaded }: ProjectTableProps) {
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -275,6 +277,7 @@ export default function ProjectTable({ onStatsLoaded }: ProjectTableProps) {
       }
     }
     loadProjects();
+    setCurrentPage(1); // Reset page on search or filter change
   }, [debouncedSearch, activeTab]);
 
   const toggleProject = (id: number) =>
@@ -376,6 +379,8 @@ export default function ProjectTable({ onStatsLoaded }: ProjectTableProps) {
   };
 
   const filteredProjects = projects;
+  const totalPages = Math.ceil(filteredProjects.length / ITEMS_PER_PAGE);
+  const paginatedProjects = filteredProjects.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   if (loading) {
     return (
@@ -452,242 +457,86 @@ export default function ProjectTable({ onStatsLoaded }: ProjectTableProps) {
           </div>
         )}
 
-        {/* Responsive Grid/Table container */}
-        <div className="surface-card rounded-xl overflow-hidden border border-border-subtle">
-          
-          {/* Mobile Card View (< sm) */}
-          <div className="block sm:hidden divide-y divide-border-subtle">
-            {filteredProjects.length === 0 && (
-              <div className="p-8 text-center text-text-muted">
-                <Folder size={32} className="mx-auto mb-3 opacity-30" />
-                <p className="text-sm">No projects found.</p>
-              </div>
-            )}
-            
-            {filteredProjects.map(project => {
-              const isExpanded = !!expandedProjects[project.id];
-              const projectItems = workItems.filter(w => w.project === project.id);
-              const members = project.members_detail || [];
+        {/* Responsive Grid Container */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredProjects.length === 0 && (
+            <div className="col-span-full py-20 text-center text-text-muted surface-card rounded-xl border border-border-subtle">
+              <Folder size={48} className="mx-auto mb-4 opacity-20" />
+              <p className="text-lg mt-4">No projects found.</p>
+            </div>
+          )}
 
-              return (
-                <div key={project.id} className="p-4">
-                  {/* Project Card Header */}
-                  <div 
-                    className="flex justify-between items-start gap-3 cursor-pointer"
-                    onClick={() => toggleProject(project.id)}
-                  >
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center text-brand flex-shrink-0 mt-0.5">
-                        <Folder size={18} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-text-primary truncate">{project.name}</h3>
-                        <div className="flex flex-wrap items-center gap-2 mt-1">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-surface-base border border-border-subtle text-text-secondary">
-                            <Layout size={10} />
-                            {project.project_type}
-                          </span>
-                          <span className="text-xs text-text-muted">{projectItems.length} items</span>
-                        </div>
-                      </div>
-                    </div>
-                    <button className="text-text-muted hover:text-brand transition-colors p-1">
-                      {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                    </button>
-                  </div>
-                  
-                  {/* Project Card Body - Only shown if members exist or expanded */}
-                  <div className="mt-4 flex items-center justify-between">
-                     <div className="text-xs font-medium text-text-secondary">Team</div>
-                     {renderAvatars(members)}
-                  </div>
+          {paginatedProjects.map(project => {
+            const projectItems = workItems.filter(w => w.project === project.id);
+            const members = project.members_detail || [];
 
-                  {/* Nested Work Items */}
-                  {isExpanded && (
-                    <div className="mt-4 space-y-2 border-t border-border-subtle pt-3">
-                      {projectItems.length === 0 ? (
-                        <p className="text-xs text-text-muted italic text-center py-2">No tasks in this project yet.</p>
-                      ) : (
-                        projectItems.map(item => {
-                          const assignedUser = members.find(m => m.id === item.assigned_to);
-                          return (
-                            <div
-                              key={`m-item-${item.id}`}
-                              onClick={(e) => handleWorkItemClick(e, item.id)}
-                              className="flex items-center justify-between p-3 rounded-lg bg-surface-base border border-border-subtle active:scale-[0.98] transition-transform"
-                            >
-                              <div className="flex items-center gap-3 min-w-0 flex-1">
-                                <ListTodo size={14} className="text-text-muted flex-shrink-0" />
-                                <div className="min-w-0">
-                                  <div className="text-xs font-medium text-text-primary truncate">
-                                    <span className="text-brand font-mono mr-1">{item.reference_number}</span>
-                                    {item.title}
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider border ${STATUS_CLASSES[item.status] || STATUS_CLASSES.OPEN}`}>
-                                      {item.status.replace('_', ' ')}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                              {assignedUser && (
-                                <button
-                                  onClick={e => handleMemberClick(e, assignedUser)}
-                                  className={`ml-2 w-6 h-6 flex-shrink-0 rounded-full border border-surface-card flex items-center justify-center text-[8px] font-bold ${AVATAR_COLORS[assignedUser.id % AVATAR_COLORS.length]}`}
-                                >
-                                  {assignedUser.profile?.avatar_url
-                                    ? <img src={assignedUser.profile.avatar_url} alt={assignedUser.username} className="w-full h-full rounded-full object-cover" />
-                                    : memberInitials(assignedUser)
-                                  }
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  )}
+            return (
+              <div 
+                key={project.id}
+                onClick={() => router.push(`/projects/${project.id}`)}
+                className="aspect-square surface-card rounded-2xl p-6 flex flex-col justify-between border border-border-subtle hover:border-brand/50 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
+              >
+                {/* Top: Icon and Type */}
+                <div className="flex justify-between items-start">
+                  <div className="w-12 h-12 rounded-xl bg-brand/10 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300">
+                    <Folder size={24} />
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-base border border-border-subtle text-xs text-text-secondary">
+                    <Layout size={12} />
+                    {project.project_type}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
 
-          {/* Desktop Table View (>= sm) */}
-          <div className="hidden sm:block overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-border-subtle text-text-muted uppercase tracking-wider text-xs" style={{ background: 'var(--surface-raised)' }}>
-                <tr>
-                  <th className="px-6 py-4 font-medium w-1/2">Project / Work Item</th>
-                  <th className="px-6 py-4 font-medium">Type</th>
-                  <th className="px-6 py-4 font-medium text-center">Status</th>
-                  <th className="px-6 py-4 font-medium text-right">Members</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-subtle">
-                {filteredProjects.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-text-muted">
-                      <Folder size={32} className="mx-auto mb-3 opacity-30" />
-                      No projects found matching your criteria.
-                    </td>
-                  </tr>
-                )}
+                {/* Middle: Title and Item Count */}
+                <div className="mt-4 flex-1 flex flex-col justify-center">
+                  <h3 className="text-lg font-bold text-text-primary line-clamp-2 leading-tight group-hover:text-brand transition-colors">
+                    {project.name}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-2 text-text-muted text-sm">
+                    <ListTodo size={14} />
+                    <span>{projectItems.length} item{projectItems.length !== 1 ? 's' : ''}</span>
+                  </div>
+                </div>
 
-                {filteredProjects.map(project => {
-                  const isExpanded = !!expandedProjects[project.id];
-                  const projectItems = workItems.filter(w => w.project === project.id);
-                  const members = project.members_detail || [];
-
-                  return (
-                    <React.Fragment key={project.id}>
-                      {/* ── Project Row ── */}
-                      <tr
-                        className="group hover:bg-brand-muted transition-colors cursor-pointer"
-                        onClick={() => toggleProject(project.id)}
-                      >
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <button className="text-text-muted group-hover:text-brand transition-colors flex-shrink-0">
-                              {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                            </button>
-                            <div className="w-8 h-8 rounded-lg bg-brand/10 flex items-center justify-center text-brand flex-shrink-0">
-                              <Folder size={15} />
-                            </div>
-                            <div className="min-w-0">
-                              <div className="font-medium text-text-primary truncate">{project.name}</div>
-                              <div className="text-xs text-text-muted">{projectItems.length} item{projectItems.length !== 1 ? 's' : ''}</div>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td className="px-6 py-4">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-base border border-border-subtle text-xs text-text-secondary">
-                            <Layout size={11} />
-                            {project.project_type}
-                          </span>
-                        </td>
-
-                        <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider border ${PROJECT_STATUS_CLASSES[project.status || 'PLANNING'] || PROJECT_STATUS_CLASSES.PLANNING}`}>
-                            {(project.status || 'PLANNING').replace('_', ' ')}
-                          </span>
-                        </td>
-
-                        <td className="px-6 py-4">
-                          {renderAvatars(members, project.id)}
-                        </td>
-                      </tr>
-
-                      {/* ── Nested Work Item Rows ── */}
-                      {isExpanded && projectItems.map(item => {
-                        const assignedUser = members.find(m => m.id === item.assigned_to);
-
-                        return (
-                          <tr
-                            key={`item-${item.id}`}
-                            className="bg-surface-base/40 hover:bg-brand-muted/60 transition-colors cursor-pointer group/item"
-                            onClick={e => handleWorkItemClick(e, item.id)}
-                          >
-                            <td className="px-6 py-3 pl-16">
-                              <div className="flex items-center gap-3">
-                                <div className="w-6 h-6 rounded-md bg-surface-card border border-border-subtle flex items-center justify-center text-text-muted flex-shrink-0">
-                                  <ListTodo size={12} />
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="font-medium text-text-primary text-sm flex flex-wrap items-center gap-1.5">
-                                    <span className="text-brand text-xs font-mono">{item.reference_number}</span>
-                                    <span className="text-text-secondary font-normal truncate group-hover/item:text-text-primary transition-colors">{item.title}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-
-                            <td className="px-6 py-3 text-text-muted text-xs">
-                              {item.category}
-                            </td>
-
-                            <td className="px-6 py-3 text-center">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider border ${STATUS_CLASSES[item.status] || STATUS_CLASSES.OPEN}`}>
-                                {item.status.replace('_', ' ')}
-                              </span>
-                            </td>
-
-                            <td className="px-6 py-3 text-right">
-                              {assignedUser ? (
-                                <div className="flex justify-end">
-                                  <button
-                                    title={assignedUser.first_name ? `${assignedUser.first_name} ${assignedUser.last_name}` : assignedUser.username}
-                                    onClick={e => handleMemberClick(e, assignedUser, project.id)}
-                                    className={`inline-flex w-6 h-6 rounded-full border border-surface-card items-center justify-center text-[9px] font-bold transition-transform hover:scale-110 cursor-pointer ${AVATAR_COLORS[assignedUser.id % AVATAR_COLORS.length]}`}
-                                  >
-                                    {assignedUser.profile?.avatar_url
-                                      ? <img src={assignedUser.profile.avatar_url} alt={assignedUser.username} className="w-full h-full rounded-full object-cover" />
-                                      : memberInitials(assignedUser)
-                                    }
-                                  </button>
-                                </div>
-                              ) : (
-                                <span className="text-text-muted text-xs">—</span>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-
-                      {isExpanded && projectItems.length === 0 && (
-                        <tr className="bg-surface-base/40">
-                          <td colSpan={4} className="px-6 py-4 pl-16 text-text-muted text-sm italic">
-                            No tasks in this project yet.
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                {/* Bottom: Status & Team */}
+                <div className="flex items-center justify-between pt-4 border-t border-border-subtle/50 mt-auto">
+                  <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${PROJECT_STATUS_CLASSES[project.status || 'PLANNING'] || PROJECT_STATUS_CLASSES.PLANNING}`}>
+                    {(project.status || 'PLANNING').replace('_', ' ')}
+                  </span>
+                  
+                  <div onClick={(e) => { e.stopPropagation(); }}>
+                    {renderAvatars(members, project.id)}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-6 mt-2 border-t border-border-subtle">
+            <span className="text-sm text-text-muted">
+              Showing <span className="font-medium text-text-primary">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="font-medium text-text-primary">{Math.min(currentPage * ITEMS_PER_PAGE, filteredProjects.length)}</span> of <span className="font-medium text-text-primary">{filteredProjects.length}</span> projects
+            </span>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg border border-border-subtle bg-surface-card text-text-primary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-raised transition-colors"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button 
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg border border-border-subtle bg-surface-card text-text-primary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-raised transition-colors"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
