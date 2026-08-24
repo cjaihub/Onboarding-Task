@@ -689,6 +689,6 @@ export default function ProjectTable({ onStatsLoaded }: ProjectTableProps) {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
