@@ -480,30 +480,30 @@ export function WorkItemDetailView({ id }: { id: number }) {
                         {c.attachment && (
                           <div className="mt-3">
                             {isImage ? (
-                              <div className="flex flex-col gap-2">
-                                <div className="relative h-48 w-64 max-w-full group/image">
-                                  <Image 
-                                    src={c.attachment} 
-                                    alt="Attached visual" 
-                                    fill
-                                    className="object-cover rounded-lg border shadow-sm cursor-pointer hover:opacity-90 transition-opacity" 
-                                    style={{ borderColor: 'var(--border-subtle)' }} 
-                                    onClick={() => window.open(c.attachment as string, '_blank')}
-                                    unoptimized
-                                  />
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      downloadFile(c.attachment!, c.attachment!.split('/').pop() || 'download');
-                                    }}
-                                    className="absolute bottom-2 right-2 flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded opacity-0 group-hover/image:opacity-100 transition-opacity shadow-md"
-                                    style={{ background: 'rgba(0,0,0,0.7)', color: 'white' }}
-                                    title="Download image"
-                                  >
-                                    <Download className="h-3.5 w-3.5" /> Download
-                                  </button>
-                                </div>
+                              <div className="relative w-64 max-w-full rounded-lg overflow-hidden group/image border border-border-subtle bg-surface-base shadow-sm">
+                                {/* Use standard img instead of next/image for better compatibility with proxy/external URLs */}
+                                <img 
+                                  src={c.attachment} 
+                                  alt="Attached visual" 
+                                  className="w-full h-auto object-cover max-h-64 cursor-pointer hover:opacity-90 transition-opacity" 
+                                  onClick={() => window.open(c.attachment as string, '_blank')}
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="%239ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                                    (e.target as HTMLImageElement).style.padding = '2rem';
+                                    (e.target as HTMLImageElement).style.opacity = '0.5';
+                                  }}
+                                />
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    downloadFile(c.attachment!, c.attachment!.split('/').pop() || 'download');
+                                  }}
+                                  className="absolute bottom-2 right-2 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md opacity-0 group-hover/image:opacity-100 transition-all shadow-lg hover:scale-105 active:scale-95"
+                                  style={{ background: 'rgba(0,0,0,0.75)', color: 'white', backdropFilter: 'blur(4px)' }}
+                                >
+                                  <Download className="h-3.5 w-3.5" /> Download
+                                </button>
                               </div>
                             ) : (
                               <button 
