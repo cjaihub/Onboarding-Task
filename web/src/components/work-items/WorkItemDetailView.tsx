@@ -12,7 +12,7 @@ import { FeedbackBanner, useFeedback } from "../ui/FeedbackBanner"
 import { CommentForm } from "./CommentForm"
 import {
   Clock, CheckCircle2, FileText, Calendar, AlertCircle,
-  RefreshCw, Briefcase, ChevronRight, PlayCircle, Eye, Inbox, Network, Camera
+  RefreshCw, Briefcase, ChevronRight, PlayCircle, Eye, Inbox, Network, Camera, Download
 } from "lucide-react"
 import Link from "next/link"
 import { CaptureModal } from '../collaboration/CaptureModal'
@@ -480,16 +480,30 @@ export function WorkItemDetailView({ id }: { id: number }) {
                         {c.attachment && (
                           <div className="mt-3">
                             {isImage ? (
-                              <div className="relative h-48 w-64 max-w-full">
-                                <Image 
-                                  src={c.attachment} 
-                                  alt="Attached visual" 
-                                  fill
-                                  className="object-cover rounded-lg border shadow-sm cursor-pointer hover:opacity-90 transition-opacity" 
-                                  style={{ borderColor: 'var(--border-subtle)' }} 
-                                  onClick={() => window.open(c.attachment as string, '_blank')}
-                                  unoptimized
-                                />
+                              <div className="flex flex-col gap-2">
+                                <div className="relative h-48 w-64 max-w-full group/image">
+                                  <Image 
+                                    src={c.attachment} 
+                                    alt="Attached visual" 
+                                    fill
+                                    className="object-cover rounded-lg border shadow-sm cursor-pointer hover:opacity-90 transition-opacity" 
+                                    style={{ borderColor: 'var(--border-subtle)' }} 
+                                    onClick={() => window.open(c.attachment as string, '_blank')}
+                                    unoptimized
+                                  />
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      downloadFile(c.attachment!, c.attachment!.split('/').pop() || 'download');
+                                    }}
+                                    className="absolute bottom-2 right-2 flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded opacity-0 group-hover/image:opacity-100 transition-opacity shadow-md"
+                                    style={{ background: 'rgba(0,0,0,0.7)', color: 'white' }}
+                                    title="Download image"
+                                  >
+                                    <Download className="h-3.5 w-3.5" /> Download
+                                  </button>
+                                </div>
                               </div>
                             ) : (
                               <button 
