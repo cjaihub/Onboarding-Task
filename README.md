@@ -415,15 +415,14 @@ ws://127.0.0.1:8000/ws/board/{project_id}/
 
 ## 📚 Documentation Package
 
-A comprehensive [Project Design & Engineering Rationale](./PROJECT_DESIGN_AND_ENGINEERING_RATIONALE.pdf) PDF has been generated. This 20+ page document serves as the master rationale for the platform, detailing:
+A comprehensive set of documents serves as the master rationale for the platform, detailing:
 
 - **Product & Design Rationale**: Executive summary, information architecture, dashboard design, and UI trade-offs.
 - **UI/UX Decision Log**: Extensive breakdown of the functional glassmorphic aesthetic and "Command Center" layout.
 - **Engineering Decision Log**: Architectural choices including the Monorepo setup, TanStack Query integration, and real-time JWT WebSocket implementation.
 - **Workflow & Domain Rationale**: Entity relationships and state transition matrix.
-- **Reviewer Response**: Honest reflections and corrective actions addressing UX complexity, missing domain constraints (Categories), and assignment functionality.
 
-Alternatively, you can read the raw Markdown files in the [`docs/`](./docs/) directory.
+You can read the raw Markdown files in the [`docs/`](./docs/) directory.
 
 ---
 
