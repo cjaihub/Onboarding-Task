@@ -38,11 +38,7 @@ def generate_pdf():
     Story.append(PageBreak())
 
     files = [
-        "docs/PRODUCT_AND_DESIGN_RATIONALE.md",
-        "docs/UI_UX_DECISION_LOG.md",
-        "docs/ENGINEERING_DECISION_LOG.md",
-        "docs/WORKFLOW_AND_DOMAIN_RATIONALE.md",
-        "docs/REVIEWER_RESPONSE.md"
+        "docs/USALAMA_PLATFORM_RATIONALE.md"
     ]
 
     for file_path in files:
