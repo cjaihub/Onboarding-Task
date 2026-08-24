@@ -25,3 +25,16 @@ export async function createComment(workItemId: number, message: string, attachm
 export async function fetchActivity(workItemId: number): Promise<Activity[]> {
   return apiClient<Activity[]>(`/work-items/${workItemId}/activity/`);
 }
+
+export async function updateComment(commentId: number, message: string): Promise<Comment> {
+  return apiClient<Comment>(`/comments/${commentId}/`, {
+    method: 'PATCH',
+    body: JSON.stringify({ message }),
+  });
+}
+
+export async function deleteComment(commentId: number): Promise<void> {
+  return apiClient<void>(`/comments/${commentId}/`, {
+    method: 'DELETE',
+  });
+}

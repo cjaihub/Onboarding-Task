@@ -75,3 +75,30 @@ export function useCreateCommentMutation() {
     },
   });
 }
+
+import { updateComment, deleteComment } from '../api/comments';
+
+export function useUpdateCommentMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ commentId, message }: { commentId: number; message: string }) =>
+      updateComment(commentId, message),
+    onSuccess: (data, variables) => {
+      // We don't have the workItemId here easily unless passed, but we can invalidate all comments or pass it in variables.
+      // Usually comments queries are keyed by workItemId.
+      queryClient.invalidateQueries({ queryKey: ['comments'] });
+    },
+  });
+}
+
+export function useDeleteCommentMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (commentId: number) => deleteComment(commentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comments'] });
+    },
+  });
+}

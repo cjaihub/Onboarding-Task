@@ -12,7 +12,7 @@ import { FeedbackBanner, useFeedback } from "../ui/FeedbackBanner"
 import { CommentForm } from "./CommentForm"
 import {
   Clock, CheckCircle2, FileText, Calendar, AlertCircle,
-  RefreshCw, Briefcase, ChevronRight, PlayCircle, Eye, Inbox, Network, Camera, Download
+  RefreshCw, Briefcase, ChevronRight, PlayCircle, Eye, Inbox, Network, Camera, Download, Edit2, Trash2
 } from "lucide-react"
 import Link from "next/link"
 import { CaptureModal } from '../collaboration/CaptureModal'
@@ -126,6 +126,7 @@ export function WorkItemDetailView({ id }: { id: number }) {
   const transitionMutation = useTransitionWorkItemMutation()
   const updateMutation = useUpdateWorkItemMutation()
   const assignMutation = useAssignWorkItemMutation()
+  const { useUpdateCommentMutation, useDeleteCommentMutation } = require('../hooks/mutations') // wait, I can just import at the top of file... actually I can just add the import at the top.
 
   // Shared feedback state via hook (auto-dismisses success after 4s)
   const { banner, showError, showSuccess, clear } = useFeedback()
@@ -133,6 +134,12 @@ export function WorkItemDetailView({ id }: { id: number }) {
   const [showResolutionForm, setShowResolutionForm] = React.useState(false)
   const [resolutionBackendError, setResolutionBackendError] = React.useState<string | null>(null)
   const [showCaptureModal, setShowCaptureModal] = React.useState(false)
+  const [editingCommentId, setEditingCommentId] = React.useState<number | null>(null)
+  const [editMessage, setEditMessage] = React.useState('')
+  const currentUserId = typeof window !== 'undefined' ? parseInt(localStorage.getItem('userId') || '0', 10) : 0
+
+  const updateCommentMutation = useUpdateCommentMutation()
+  const deleteCommentMutation = useDeleteCommentMutation()
   
   // Mobile specific states
   const [activeTab, setActiveTab] = React.useState<"overview" | "discussion" | "workflows">("overview")
@@ -466,17 +473,78 @@ export function WorkItemDetailView({ id }: { id: number }) {
                         className="max-w-[85%] rounded-2xl rounded-bl-sm p-4 shadow-sm"
                         style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-subtle)' }}
                       >
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
-                            {c.author_name || `User ${c.author}`}
-                          </span>
-                          <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                            {new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
+                              {c.author_name || `User ${c.author}`}
+                            </span>
+                            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                              {new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          {c.author === currentUserId && editingCommentId !== c.id && (
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button 
+                                onClick={() => { setEditingCommentId(c.id); setEditMessage(c.message); }}
+                                className="p-1.5 hover:bg-white/10 rounded transition-colors"
+                                title="Edit comment"
+                              >
+                                <Edit2 className="h-3.5 w-3.5 text-gray-400 hover:text-white" />
+                              </button>
+                              <button 
+                                onClick={async () => {
+                                  if (confirm('Are you sure you want to delete this comment?')) {
+                                    try {
+                                      await deleteCommentMutation.mutateAsync(c.id);
+                                      showSuccess('Comment deleted');
+                                    } catch (e) {
+                                      showError('Failed to delete comment');
+                                    }
+                                  }
+                                }}
+                                className="p-1.5 hover:bg-white/10 rounded transition-colors"
+                                title="Delete comment"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 text-gray-400 hover:text-red-500" />
+                              </button>
+                            </div>
+                          )}
                         </div>
-                        <p className="whitespace-pre-wrap leading-relaxed font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
-                          {c.message}
-                        </p>
+                        {editingCommentId === c.id ? (
+                          <div className="mt-2">
+                            <textarea
+                              className="w-full rounded-md border-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-red-500 focus:ring-red-500/20"
+                              style={{ background: 'var(--surface-base)', borderColor: 'var(--border-subtle)', color: 'white' }}
+                              value={editMessage}
+                              onChange={(e) => setEditMessage(e.target.value)}
+                              rows={3}
+                            />
+                            <div className="flex justify-end gap-2 mt-2">
+                              <Button size="sm" variant="ghost" onClick={() => setEditingCommentId(null)}>Cancel</Button>
+                              <Button 
+                                size="sm" 
+                                className="bg-red-600 hover:bg-red-700 text-white font-bold shadow-sm"
+                                disabled={updateCommentMutation.isPending}
+                                onClick={async () => {
+                                  if (!editMessage.trim()) return;
+                                  try {
+                                    await updateCommentMutation.mutateAsync({ commentId: c.id, message: editMessage });
+                                    setEditingCommentId(null);
+                                    showSuccess('Comment updated');
+                                  } catch(e) {
+                                    showError('Failed to update comment');
+                                  }
+                                }}
+                              >
+                                {updateCommentMutation.isPending ? 'Saving...' : 'Save'}
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="whitespace-pre-wrap leading-relaxed font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+                            {c.message}
+                          </p>
+                        )}
                         {c.attachment && (
                           <div className="mt-3">
                             {isImage ? (
