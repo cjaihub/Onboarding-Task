@@ -118,7 +118,8 @@ class Comment(models.Model):
         return f"Comment by {self.author} on {self.work_item}"
 
 class Activity(models.Model):
-    work_item = models.ForeignKey(WorkItem, on_delete=models.CASCADE, related_name='activities')
+    work_item = models.ForeignKey(WorkItem, on_delete=models.CASCADE, related_name='activities', null=True, blank=True)
+    project = models.ForeignKey('Project', on_delete=models.CASCADE, related_name='activities', null=True, blank=True)
     actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='activities_caused')
     activity_type = models.CharField(max_length=100)
     field_changed = models.CharField(max_length=100, null=True, blank=True)

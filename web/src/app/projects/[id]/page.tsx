@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient, downloadFile } from '../../../lib/api-client'
 import { Project, User, WorkItem, ProjectAttachment, ProjectComment } from '../../../types/api'
 import { uploadProjectAttachment, updateProject, createProjectComment, deleteProjectAttachment } from '../../../api/projects'
+import { fetchUsers } from '../../../api/users'
 import { Shield, Settings, Activity, FolderOpen, Users, ListTodo, ChevronRight, BarChart2, ShieldAlert, User as UserIcon, Paperclip, MessageSquare, Save, X, UploadCloud, Download, Trash2, Send } from 'lucide-react'
 import Link from 'next/link'
 import { Spinner } from '../../../components/ui/Spinner'
@@ -41,7 +42,7 @@ export default function ProjectDashboardPage() {
 
   const { data: users = [], isLoading: isUsersLoading } = useQuery({
     queryKey: ['users'],
-    queryFn: () => apiClient<User[]>('/users/')
+    queryFn: fetchUsers
   })
 
   const { data: workItemsData, isLoading: isWorkItemsLoading } = useQuery({

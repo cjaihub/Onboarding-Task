@@ -2,7 +2,7 @@
 import * as React from "react"
 import { downloadFile } from "../../lib/api-client"
 import { useWorkItemQuery, useCommentsQuery, useActivityQuery, useUsersQuery, useProjectsQuery } from "../../hooks/queries"
-import { useTransitionWorkItemMutation, useUpdateWorkItemMutation, useAssignWorkItemMutation } from "../../hooks/mutations"
+import { useTransitionWorkItemMutation, useUpdateWorkItemMutation, useAssignWorkItemMutation, useUpdateCommentMutation, useDeleteCommentMutation } from "../../hooks/mutations"
 import { Status, Comment, Activity } from "../../types/api"
 import { Badge } from "../ui/Badge"
 import { Button } from "../ui/Button"
@@ -126,7 +126,6 @@ export function WorkItemDetailView({ id }: { id: number }) {
   const transitionMutation = useTransitionWorkItemMutation()
   const updateMutation = useUpdateWorkItemMutation()
   const assignMutation = useAssignWorkItemMutation()
-  const { useUpdateCommentMutation, useDeleteCommentMutation } = require('../hooks/mutations') // wait, I can just import at the top of file... actually I can just add the import at the top.
 
   // Shared feedback state via hook (auto-dismisses success after 4s)
   const { banner, showError, showSuccess, clear } = useFeedback()

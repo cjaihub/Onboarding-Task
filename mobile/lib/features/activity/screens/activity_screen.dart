@@ -4,7 +4,11 @@ import '../../../models/activity.dart';
 import '../../../repositories/activity_repository.dart';
 import '../../../widgets/error_view.dart';
 import '../../../widgets/loading_view.dart';
+import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:intl/intl.dart';
+import '../../../services/api_service.dart';
 
 class ActivityScreen extends StatefulWidget {
   const ActivityScreen({Key? key}) : super(key: key);
@@ -19,10 +23,46 @@ class _ActivityScreenState extends State<ActivityScreen> {
   String? _error;
   bool _isLoading = true;
 
+  final FlutterSecureStorage _storage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+  WebSocketChannel? _channel;
+
   @override
   void initState() {
     super.initState();
     _fetchData();
+    _connectWebSocket();
+  }
+
+  Future<void> _connectWebSocket() async {
+    try {
+      final token = await _storage.read(key: 'access_token');
+      if (token == null) return;
+      
+      final wsUrl = Uri.parse('${ApiService.wsBaseUrl}/board/?token=$token');
+      _channel = WebSocketChannel.connect(wsUrl);
+      
+      _channel!.stream.listen((message) {
+        final data = jsonDecode(message);
+        if (data['type'] == 'activity_updated' || data['type'] == 'work_item_updated' || data['type'] == 'comment_updated') {
+          // Re-fetch to guarantee order and fully populated fields
+          _fetchData();
+        }
+      }, onError: (error) {
+        debugPrint('WebSocket Error: $error');
+      }, onDone: () {
+        debugPrint('WebSocket closed.');
+      });
+    } catch (e) {
+      debugPrint('WebSocket connection failed: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _channel?.sink.close();
+    super.dispose();
   }
 
   Future<void> _fetchData() async {

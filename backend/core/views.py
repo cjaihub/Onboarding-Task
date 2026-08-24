@@ -8,6 +8,7 @@ from django.db import models
 
 from django.contrib.auth.models import User
 from .models import Project, WorkItem, Comment, Activity, Workflow, WorkflowExecution, WorkflowExecutionStep, ProjectAttachment, ProjectComment
+from .services import record_activity
 from .serializers import (
     ProjectSerializer, WorkItemSerializer, CommentSerializer, 
     ActivitySerializer, UserSerializer, WorkflowSerializer,
@@ -54,6 +55,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = serializer.save()
         if self.request.user.is_authenticated:
             project.members.add(self.request.user)
+            record_activity(project=project, activity_type='CREATED', user=self.request.user)
 
     @action(detail=True, methods=['post'])
     def add_member(self, request, pk=None):
