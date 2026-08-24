@@ -415,14 +415,9 @@ ws://127.0.0.1:8000/ws/board/{project_id}/
 
 ## 📚 Documentation Package
 
-A comprehensive set of documents serves as the master rationale for the platform, detailing:
+A comprehensive set of documents serves as the master rationale for the platform, detailing the product, design, and engineering architectural decisions that went into building this platform.
 
-- **Product & Design Rationale**: Executive summary, information architecture, dashboard design, and UI trade-offs.
-- **UI/UX Decision Log**: Extensive breakdown of the functional glassmorphic aesthetic and "Command Center" layout.
-- **Engineering Decision Log**: Architectural choices including the Monorepo setup, TanStack Query integration, and real-time JWT WebSocket implementation.
-- **Workflow & Domain Rationale**: Entity relationships and state transition matrix.
-
-You can read the raw Markdown files in the [`docs/`](./docs/) directory.
+You can read the master Markdown file here: [`docs/USALAMA_PLATFORM_RATIONALE.md`](./docs/USALAMA_PLATFORM_RATIONALE.md).
 
 ---
 
